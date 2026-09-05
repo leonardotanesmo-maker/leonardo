@@ -1,0 +1,74 @@
+/* Leonardo – sideoppsett og varianter */
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-6);
+  flex-wrap: wrap;
+}
+.page-head .page-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--r-l);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(22, 28, 46, 0.14);
+}
+.page-head .page-title-box { flex: 1; min-width: 260px; }
+.page-head h1 { font-size: var(--fs-2xl); margin-bottom: var(--sp-2); }
+.page-head .page-lede { color: var(--ink-2); max-width: 64ch; margin: 0; }
+.page-head .page-actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+
+.side-icon { display: inline-flex; align-items: center; gap: var(--sp-2); }
+
+/* Fagside */
+.subject-hero {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: var(--sp-6);
+  margin-bottom: var(--sp-6);
+  box-shadow: var(--shadow-s);
+}
+.learning-goals { gap: 0; }
+.learning-goals li { padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); }
+.learning-goals li:last-child { border-bottom: 0; }
+
+/* Om-siden */
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); align-items: start; }
+.about-grid > div > p { font-size: var(--fs-md); line-height: var(--lh-loose); color: var(--ink-2); margin: 0 0 var(--sp-4); }
+.about-grid h3 { margin-bottom: var(--sp-3); }
+.contact-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-2); }
+.contact-list li {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+}
+.contact-list a { font-weight: 700; color: var(--primary); }
+.contact-list a:hover { text-decoration: underline; }
+
+/* Fargevarianter per fag */
+.accent-geografi { background: var(--c-geografi); }
+.accent-matematikk { background: var(--c-matematikk); }
+.accent-norsk { background: var(--c-norsk); }
+.accent-engelsk { background: var(--c-engelsk); }
+.accent-naturfag { background: var(--c-naturfag); }
+.accent-samfunnsfag { background: var(--c-samfunnsfag); }
+.accent-hjernetrim { background: var(--c-hjernetrim); }
+.accent-quiz { background: var(--c-quiz); }
+
+.subject-card:hover { border-color: color-mix(in srgb, var(--subject-accent, var(--primary)) 45%, transparent); }
+
+/* Hero-minimap duppliser, som på forsiden */
+.map-preview svg { width: 100%; height: auto; display: block; }

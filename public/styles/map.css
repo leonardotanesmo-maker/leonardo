@@ -1,0 +1,99 @@
+/* Leonardo – interaktivt verdenskart */
+
+.map-wrap {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-l);
+  overflow: hidden;
+  box-shadow: var(--shadow-s);
+}
+
+.map-stage svg { display: block; width: 100%; height: auto; touch-action: manipulation; }
+
+#world-map .ocean { fill: url(#globe); }
+#world-map .graticule { fill: none; stroke: rgba(120, 140, 175, 0.28); stroke-width: 0.7; }
+#world-map .land { fill: var(--land); }
+
+#world-map .country {
+  fill: var(--land);
+  stroke: #ffffff;
+  stroke-width: 0.7;
+  stroke-linejoin: round;
+  transition: fill var(--t-fast);
+  cursor: pointer;
+}
+#world-map .country:hover {
+  fill: var(--land-hover);
+}
+#world-map .country.is-highlight {
+  fill: var(--land-hover);
+  stroke: #ffffff;
+  stroke-width: 1.2;
+}
+#world-map .country.is-dim { opacity: 0.28; }
+#world-map .country:focus {
+  outline: none;
+  fill: var(--land-hover);
+}
+#world-map .country:focus-visible {
+  stroke: #ffffff;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 4px rgba(58, 91, 217, 0.6));
+}
+
+.map-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+}
+
+.map-toolbar {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-4);
+  flex-wrap: wrap;
+}
+.map-toolbar .field { flex: 1; min-width: 220px; max-width: 340px; }
+
+.map-legend-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  margin-top: var(--sp-3);
+}
+.map-hint-key {
+  display: inline-flex;
+  width: 18px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--land);
+  border: 1px solid var(--line-2);
+}
+
+.map-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  flex-wrap: wrap;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+}
+
+.map-countries {
+  margin-top: var(--sp-6);
+}
+
+@media (max-width: 560px) {
+  .map-toolbar { align-items: stretch; }
+  .map-toolbar .field { max-width: none; }
+}

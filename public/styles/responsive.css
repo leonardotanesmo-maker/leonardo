@@ -1,0 +1,56 @@
+/* Leonardo – responsiv tilpasning */
+
+@media (max-width: 920px) {
+  .main-nav { display: none; }
+  .menu-btn { display: inline-flex; }
+  .hero-inner { grid-template-columns: 1fr; gap: var(--sp-6); }
+  .hero .hero-mini-map { max-width: 520px; }
+  .steps { grid-template-columns: 1fr; gap: var(--sp-4); }
+  .footer-inner { grid-template-columns: 1fr 1fr; }
+  .spot-banner { grid-template-columns: 1fr; padding: var(--sp-6); gap: var(--sp-4); }
+  .about-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  :root { --header-h: 58px; }
+
+  h1 { font-size: var(--fs-2xl); }
+  h2 { font-size: var(--fs-xl); }
+
+  .container { padding: var(--sp-4) var(--sp-4) var(--sp-8); }
+  .hero { padding: var(--sp-6) 0 var(--sp-4); }
+
+  .header-inner { padding: 0 var(--sp-3); gap: var(--sp-2); }
+  .brand .brand-name { font-size: var(--fs-md); }
+  .header-search input[type="search"] { width: 40px; padding-left: 2.1rem; }
+  .header-search input[type="search"]:focus { width: 40px; }
+  .header-search input[type="search"]::placeholder { color: transparent; }
+  .header-search .search-input-wrap .icon { left: 12px; }
+  .search-dropdown { position: fixed; left: var(--sp-3); right: var(--sp-3); top: var(--header-h); width: auto; }
+
+  .fact-grid { grid-template-columns: 1fr 1fr; }
+  .footer-inner { grid-template-columns: 1fr; gap: var(--sp-5); }
+  .quiz-q { padding: var(--sp-5); }
+  .quiz-q h2 { font-size: var(--fs-lg); }
+  .steps { gap: var(--sp-2); }
+  .section { margin-top: var(--sp-8); }
+
+  .page-head .page-actions { width: 100%; }
+  .page-head .btn { flex: 1; justify-content: center; }
+}
+
+@media (max-width: 440px) {
+  .fact-grid { grid-template-columns: 1fr; }
+  .country-list { grid-template-columns: 1fr; }
+  .subject-card { padding: var(--sp-4); }
+  .hero .hero-actions .btn { flex: 1; justify-content: center; }
+
+  /* Kartet på veldig små skjermer: høyere visning */
+  #world-map { min-width: 560px; }
+  .map-stage { overflow-x: auto; }
+  .map-stage svg { width: 560px; max-width: none; }
+}
+
+@media (pointer: coarse) {
+  .map-tooltip { display: none; }
+}

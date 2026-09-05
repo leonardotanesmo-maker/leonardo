@@ -1,0 +1,243 @@
+/* Leonardo – layout: header, hovedinnhold, footer */
+
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 500;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.header-inner {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 var(--sp-5);
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: var(--fs-lg);
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.brand:hover { text-decoration: none; }
+.brand .brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-s);
+}
+.brand .brand-name b { color: var(--primary); }
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-left: var(--sp-2);
+  flex: 1;
+}
+
+.main-nav a {
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-pill);
+  color: var(--ink-2);
+  font-weight: 650;
+  font-size: var(--fs-sm);
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.main-nav a:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+  text-decoration: none;
+}
+.main-nav a[aria-current="page"] {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+
+/* Søk i header */
+.header-search {
+  position: relative;
+}
+.header-search .search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.header-search .search-input-wrap .icon {
+  position: absolute;
+  left: var(--sp-3);
+  pointer-events: none;
+  color: var(--ink-3);
+  display: flex;
+}
+.header-search input[type="search"] {
+  width: 200px;
+  padding: 0.55rem 0.95rem;
+  padding-left: 2.3rem;
+  border: 1.5px solid var(--line-2);
+  background: var(--surface);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  font-family: inherit;
+  color: var(--ink);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), width var(--t-base);
+}
+.header-search input[type="search"]:hover { border-color: var(--ink-3); }
+.header-search input[type="search"]:focus { border-color: var(--primary); box-shadow: var(--focus-ring); outline: none; width: 240px; }
+
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  box-shadow: var(--shadow-l);
+  padding: var(--sp-2);
+  max-height: 60vh;
+  overflow-y: auto;
+  display: none;
+  z-index: 600;
+}
+.search-dropdown.is-open { display: block; }
+.search-dropdown .s-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-s);
+  text-decoration: none;
+  color: var(--ink);
+}
+.search-dropdown .s-item:hover, .search-dropdown .s-item:focus { background: var(--surface-2); text-decoration: none; }
+.search-dropdown .s-item .s-label {
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-tight);
+}
+.search-dropdown .s-item .s-sub {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+}
+.search-dropdown .s-empty { padding: var(--sp-3); color: var(--ink-3); font-size: var(--fs-sm); }
+.search-dropdown .s-more {
+  display: block;
+  text-align: center;
+  padding: var(--sp-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+/* Knapper i verktøyslinje */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  border-radius: var(--r-s);
+  cursor: pointer;
+  transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast);
+}
+.icon-btn:hover { color: var(--ink); border-color: var(--line-2); background: var(--surface-2); }
+.icon-btn .icon { display: flex; }
+
+.menu-btn { display: none; }
+
+/* Mobilnavigasjon */
+.mobile-nav {
+  display: none;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  padding: var(--sp-2) var(--sp-4) var(--sp-4);
+}
+.mobile-nav.is-open { display: block; }
+.mobile-nav a {
+  display: block;
+  padding: var(--sp-3) var(--sp-3);
+  border-radius: var(--r-s);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.mobile-nav a:hover { background: var(--surface-2); color: var(--ink); text-decoration: none; }
+.mobile-nav a[aria-current="page"] { color: var(--primary); background: var(--primary-soft); }
+
+/* Hovedinnhold */
+#view {
+  flex: 1;
+  outline: none;
+}
+.view-enter {
+  animation: viewIn var(--t-slow) both;
+}
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--sp-6) var(--sp-5) var(--sp-10);
+}
+
+.page-pad { padding-top: var(--sp-8); padding-bottom: var(--sp-10); }
+
+/* Footer */
+.app-footer {
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  margin-top: var(--sp-8);
+}
+.footer-inner {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--sp-6) var(--sp-5);
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: var(--sp-6);
+}
+.footer-inner h4 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); margin-bottom: var(--sp-3); font-weight: 700; }
+.footer-inner p, .footer-inner li { font-size: var(--fs-sm); color: var(--ink-2); }
+.footer-inner ul { list-style: none; padding: 0; }
+.footer-inner li { margin-bottom: var(--sp-2); }
+.footer-inner a { transition: color var(--t-fast); }
+.footer-inner a:hover { color: var(--primary); }
+.footer-note {
+  border-top: 1px solid var(--line);
+  padding: var(--sp-4) var(--sp-5);
+  text-align: center;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  max-width: var(--container);
+  margin: 0 auto;
+}

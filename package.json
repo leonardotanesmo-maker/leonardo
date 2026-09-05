@@ -1,0 +1,19 @@
+{
+  "name": "leonardo",
+  "version": "1.0.0",
+  "description": "Leonardo – læring, quizer og gåter for skolen. Laget av Leonardo, elev ved Nidaros idretts ungdomsskole i Tiller.",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "refresh-data": "node scripts/refresh-data.js"
+  },
+  "devDependencies": {
+    "d3-geo": "^3.1.1",
+    "topojson-client": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

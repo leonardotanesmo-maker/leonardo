@@ -1,0 +1,101 @@
+/* Leonardo design tokens */
+:root {
+  /* Farger */
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #f2f4fa;
+  --surface-3: #e9edf6;
+  --ink: #1c2230;
+  --ink-2: #49536a;
+  --ink-3: #7d879b;
+  --line: #e6eaf3;
+  --line-2: #d2d9e8;
+
+  --primary: #3a5bd9;
+  --primary-strong: #314cc2;
+  --primary-soft: #edf1fe;
+  --primary-ink: #ffffff;
+  --accent: #f2a53c;
+  --accent-strong: #e8933a;
+  --accent-soft: #fdf4e3;
+  --violet: #7b5cd6;
+  --violet-soft: #f0ecfd;
+  --teal: #0f8a8a;
+
+  --grad-primary: linear-gradient(135deg, #3a5bd9 0%, #5b4ad1 55%, #7b5cd6 100%);
+  --grad-warm: linear-gradient(135deg, #f2a53c 0%, #f0683c 100%);
+
+  --ok: #189a5b;
+  --ok-soft: #e7f7ef;
+  --ok-border: #bfe9d4;
+  --err: #d15050;
+  --err-soft: #fdeeee;
+  --err-border: #f2c9c9;
+
+  --ocean: #e5ecf8;
+  --land: #c9d9ee;
+  --land-hover: #3a5bd9;
+
+  /* Typografi */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-display: var(--font-sans);
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.375rem;
+  --fs-xl: 1.75rem;
+  --fs-2xl: 2.25rem;
+  --fs-3xl: 3rem;
+
+  --lh-tight: 1.2;
+  --lh-normal: 1.5;
+  --lh-loose: 1.65;
+
+  /* Avstand */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-8: 3rem;
+  --sp-10: 4rem;
+  --sp-12: 6rem;
+
+  /* Radius */
+  --r-s: 8px;
+  --r-m: 12px;
+  --r-l: 16px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  /* Skygger */
+  --shadow-s: 0 1px 2px rgba(22, 28, 46, 0.05);
+  --shadow-m: 0 6px 22px rgba(22, 28, 46, 0.09);
+  --shadow-l: 0 18px 50px rgba(22, 28, 46, 0.16);
+  --shadow-cta: 0 8px 20px rgba(58, 91, 217, 0.32);
+
+  /* Fokus */
+  --focus-ring: 0 0 0 3px rgba(58, 91, 217, 0.38);
+
+  /* Layout */
+  --container: 1120px;
+  --header-h: 64px;
+
+  /* Bevegelse */
+  --t-fast: 130ms ease;
+  --t-base: 220ms cubic-bezier(0.2, 0, 0, 1);
+  --t-slow: 340ms cubic-bezier(0.2, 0, 0, 1);
+
+  /* Fagfarger (brukes sparsomt) */
+  --c-geografi: #3a5bd9;
+  --c-matematikk: #b3522e;
+  --c-norsk: #8a4fc0;
+  --c-engelsk: #0f8a8a;
+  --c-naturfag: #2e8b57;
+  --c-samfunnsfag: #b8860b;
+  --c-hjernetrim: #c05586;
+  --c-quiz: #3b6eeb;
+}
