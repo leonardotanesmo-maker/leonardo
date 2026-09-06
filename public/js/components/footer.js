@@ -1,6 +1,6 @@
 // Leonardo – footer
 import { h } from '../dom.js';
-import { SUBJECTS } from '../data.js';
+import { SUBJECTS } from '../../data/subjects.js';
 
 export function mountFooter(host) {
   const footer = h('footer', { class: 'footer-inner' },

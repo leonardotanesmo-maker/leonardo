@@ -2,7 +2,7 @@
 import { h } from '../dom.js';
 import { icon } from '../icons.js';
 import { crumbs, sectionHead, subjectCards } from '../components.js';
-import { SUBJECTS } from '../data.js';
+import { SUBJECTS } from '../../data/subjects.js';
 
 export function renderAbout() {
   const el = h('div', { class: 'container page-pad' },

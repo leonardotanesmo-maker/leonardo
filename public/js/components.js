@@ -2,7 +2,7 @@
 
 import { h } from './dom.js';
 import { icon } from './icons.js';
-import { SUBJECTS } from './data.js';
+import { SUBJECTS } from '../data/subjects.js';
 
 export const SUBJECT_ICON_COLORS = {
   geografi: '#3a5bd9',

@@ -10,12 +10,29 @@
 //   - Hver runde får derfor sjelden samme quiz to ganger
 import { h, q, qa, clear } from '../dom.js';
 import { icon } from '../icons.js';
-import { COUNTRIES, formatPopulation } from '../../data/countries.js';
-import { countryByNumeric, countryByIso2 } from '../data.js';
 import { MAP_BBOX } from '../../data/mapBBox.js';
-import { loadMapOn } from './map.js';
 import { generateMathQuiz } from '../../data/mathGenerator.js';
 import { track } from '../store.js';
+
+// Landmoduler (COUNTRIES m/ flagg, kart-hjelpere og kart-reactoren) lastes bare
+// når en quiz faktisk trenger dem – altså flagg- og kartoppgaver. Tekst- og
+// matte-quizer slipper dermed å hente den store landsdatasettet.
+let heavyP = null;
+let heavyV = null;
+export function loadHeavyQuizMods() {
+  if (!heavyP) {
+    heavyP = Promise.all([
+      import('../../data/countries.js'),
+      import('../data.js'),
+      import('./map.js'),
+    ]).then(([countries, data, map]) => {
+      heavyV = { countries, data, map };
+      return heavyV;
+    });
+  }
+  return heavyP;
+}
+function H() { return heavyV; }
 
 const LETTERS = ['A', 'B', 'C', 'D'];
 
@@ -194,6 +211,9 @@ class ChoiceQuiz extends BaseQuiz {
     };
     const tier = tiers[this.difficulty] || tiers.medium;
     const minPop = tier.minPopulation || 2e6;
+    const mods = H();
+    if (!mods) return [];
+    const { COUNTRIES, formatPopulation } = mods.countries;
     const pool = COUNTRIES.filter((c) => c.flagFile && c.population > 0 && c.population >= minPop);
     if (!pool.length) return [];
 
@@ -391,6 +411,8 @@ class MapQuiz extends BaseQuiz {
   }
 
   async mount() {
+    const mods = H();
+    const { loadMapOn } = mods ? mods.map : await import('./map.js');
     await loadMapOn(this.mapStage, (id, el) => this.guess(id, el), {
       quiet: true,
       ariaLabel: (c) => `${c.name}. Velg dette landet som svar.`,
@@ -428,6 +450,10 @@ class MapQuiz extends BaseQuiz {
   }
 
   buildPool(paths) {
+    const mods = H();
+    if (!mods) return;
+    const { COUNTRIES } = mods.countries;
+    const { countryByNumeric } = mods.data;
     this.pathByIso = {};
     for (const p of paths) {
       const c = countryByNumeric(p.getAttribute('data-numeric'));
@@ -695,6 +721,9 @@ class MapQuiz extends BaseQuiz {
   guess(id, el) {
     if (!this.ready || this.won || !this.current) return;
     if (this._fbTimer) { clearTimeout(this._fbTimer); this._fbTimer = null; }
+    const mods = H();
+    if (!mods) return;
+    const { countryByIso2 } = mods.data;
     const clicked = countryByIso2(id);
     if (!clicked) return;
     if (!this.continentPool.has(id)) {

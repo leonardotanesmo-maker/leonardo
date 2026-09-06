@@ -1,7 +1,15 @@
 // Leonardo – header med navigasjon og søk
 import { h, q, clear } from '../dom.js';
 import { icon } from '../icons.js';
-import { search } from '../data.js';
+
+let searchModule = null;
+
+async function getSearch() {
+  // Søkeindeksen trenger all land- og quizdata (tung). Hentes først når
+  // eleven faktisk begynner å skrive – så forsiden lastes raskt og lett.
+  if (!searchModule) searchModule = await import('../data.js');
+  return searchModule.search;
+}
 
 export function mountHeader(host) {
   const navItems = [
@@ -9,6 +17,7 @@ export function mountHeader(host) {
     { key: 'fag', label: 'Fag', href: '#/fag' },
     { key: 'geografi', label: 'Geografi', href: '#/geografi' },
     { key: 'quiz', label: 'Quiz', href: '#/fag/quiz' },
+    { key: 'duell', label: 'Duell', href: '#/duell' },
     { key: 'om', label: 'Om', href: '#/om' },
   ];
 
@@ -34,10 +43,11 @@ export function mountHeader(host) {
   );
 
   // Forbedret søk: åpne dropdown ved input
-  function runSearch() {
+  async function runSearch() {
     const term = searchInput.value.trim();
     clear(dropdown);
     if (!term) { dropdown.classList.remove('is-open'); return; }
+    const search = await getSearch();
     const res = search(term, 7);
     if (!res.length) {
       dropdown.appendChild(h('div', { class: 's-empty', text: 'Ingen treff' }));

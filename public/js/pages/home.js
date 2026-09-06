@@ -1,9 +1,8 @@
 // Leonardo – forsiden
-import { h } from '../dom.js';
+import { h, clear } from '../dom.js';
 import { icon } from '../icons.js';
 import { subjectCards, sectionHead, activityCard } from '../components.js';
 import { SUBJECTS, POPULAR } from '../../data/subjects.js';
-import { quizById, countryByIso2 } from '../data.js';
 import { getRecent } from '../store.js';
 
 function heroVisual() {
@@ -38,8 +37,7 @@ function step(num, iconHtml, title, text) {
   );
 }
 
-function recentCountry(c) {
-  const cc = countryByIso2(c.id);
+function recentCountryCard(c, cc) {
   return h('a', { class: 'card card-hover activity-card', href: '#/geografi/' + c.id },
     cc && cc.flagFile
       ? h('img', { class: 'cr-flag', src: cc.flagFile, alt: '', width: 46, height: 23 })
@@ -55,26 +53,15 @@ function recentCountry(c) {
 export function renderHome() {
   const recent = getRecent();
 
+  // Disse fylles i mount(), etter at de tunge land-/quizdataene har lastet.
+  // Da maler forsiden seg nesten med en gang, og skolen får raskere side.
+  const popularHost = h('div', { class: 'activity-list is-loading' });
+  const recentHost = h('div', { class: 'activity-list' });
+
   const recentActivity = recent.length
     ? h('div', { class: 'section' },
         sectionHead('Siste aktivitet', 'Du var i gang med dette', null),
-        h('div', { class: 'activity-list' },
-          ...recent.map((r) => {
-            if (r.kind === 'country') return recentCountry(r);
-            if (r.kind === 'quiz') return activityCard({ kind: 'quiz', id: r.id }, quizById);
-            if (r.kind === 'subject') {
-              return h('a', { class: 'card card-hover activity-card', href: '#/fag/' + r.id },
-                h('div', { class: 'activity-icon accent-quiz', html: icon('book', 20) }),
-                h('div', { class: 'activity-body' },
-                  h('h4', { text: r.name }),
-                  h('div', { class: 'activity-meta', text: 'Fag' }),
-                ),
-                h('span', { class: 'activity-go', html: 'Åpne' + icon('arrow', 15) }),
-              );
-            }
-            return null;
-          }),
-        ),
+        recentHost,
       )
     : null;
 
@@ -116,9 +103,7 @@ export function renderHome() {
 
       h('div', { class: 'section' },
         sectionHead('Populært på Leonardo', 'Oppgavene mange starter med', '#/fag/quiz', 'Alle quizer'),
-        h('div', { class: 'activity-list' },
-          ...POPULAR.map((p) => activityCard(p.kind === 'map' ? p : { kind: 'quiz', id: p.id }, quizById)),
-        ),
+        popularHost,
       ),
 
       recentActivity,
@@ -134,5 +119,35 @@ export function renderHome() {
     ),
   );
 
-  return { title: 'Leonardo – lær, tenk og bli bedre', element: el };
+  const mount = async () => {
+    const { quizById, countryByIso2 } = await import('../data.js');
+
+    const popular = POPULAR.map((p) => activityCard(p.kind === 'map' ? p : { kind: 'quiz', id: p.id }, quizById));
+    clear(popularHost);
+    for (const card of popular) popularHost.appendChild(card);
+
+    if (recent.length) {
+      const cards = recent.map((r) => {
+        if (r.kind === 'country') return recentCountryCard(r, countryByIso2(r.id));
+        if (r.kind === 'quiz') return activityCard({ kind: 'quiz', id: r.id }, quizById);
+        if (r.kind === 'subject') {
+          return h('a', { class: 'card card-hover activity-card', href: '#/fag/' + r.id },
+            h('div', { class: 'activity-icon accent-quiz', html: icon('book', 20) }),
+            h('div', { class: 'activity-body' },
+              h('h4', { text: r.name }),
+              h('div', { class: 'activity-meta', text: 'Fag' }),
+            ),
+            h('span', { class: 'activity-go', html: 'Åpne' + icon('arrow', 15) }),
+          );
+        }
+        return null;
+      }).filter(Boolean);
+      clear(recentHost);
+      for (const card of cards) recentHost.appendChild(card);
+    }
+
+    return () => {};
+  };
+
+  return { title: 'Leonardo – lær, tenk og bli bedre', element: el, mount };
 }

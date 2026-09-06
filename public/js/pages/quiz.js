@@ -2,8 +2,9 @@
 import { h } from '../dom.js';
 import { icon } from '../icons.js';
 import { crumbs } from '../components.js';
-import { quizById, subjectBySlug } from '../data.js';
-import { quizRunner, DIFFICULTY_LABELS } from '../components/quizRunner.js';
+import { QUIZ_BY_ID } from '../../data/quizzes.js';
+import { SUBJECT_BY_SLUG } from '../../data/subjects.js';
+import { quizRunner, loadHeavyQuizMods, DIFFICULTY_LABELS } from '../components/quizRunner.js';
 
 const DIFFICULTIES = [
   { key: 'easy', icon: 'sparkles', desc: 'Enkle spørsmål som bygger grunnmuren.' },
@@ -38,7 +39,7 @@ function quizIsMap(quiz) {
 
 export function renderQuiz({ params }) {
   const id = params.id;
-  const quiz = quizById(id);
+  const quiz = QUIZ_BY_ID[id] || null;
   if (!quiz) {
     return {
       title: 'Quiz ikke funnet – Leonardo',
@@ -50,7 +51,7 @@ export function renderQuiz({ params }) {
     };
   }
 
-  const subject = subjectBySlug(quiz.subject);
+  const subject = SUBJECT_BY_SLUG[quiz.subject] || null;
   const crumb = subject
     ? [{ label: 'Hjem', href: '#/' }, { label: 'Fag', href: '#/fag' }, { label: subject.name, href: '#/fag/' + subject.slug }, { label: quiz.title }]
     : [{ label: 'Hjem', href: '#/' }, { label: 'Quizer', href: '#/fag/quiz' }, { label: quiz.title }];
@@ -73,7 +74,10 @@ export function renderQuiz({ params }) {
     stage,
   );
 
-  function startQuiz(config) {
+  async function startQuiz(config) {
+    if (quiz.type === 'flag' || quiz.type === 'map') {
+      await loadHeavyQuizMods();
+    }
     setupHost.innerHTML = '';
     stage.innerHTML = '';
     const runner = quizRunner(quiz, () => {}, config);

@@ -1,0 +1,292 @@
+/* Leonardo – duell */
+
+.duel-hero {
+  max-width: 640px;
+  margin: var(--sp-6) 0 var(--sp-6);
+}
+.duel-hero h1 {
+  font-size: var(--fs-2xl);
+  margin: var(--sp-2) 0 var(--sp-2);
+  line-height: var(--lh-tight);
+}
+.duel-hero p {
+  color: var(--ink-2);
+  font-size: var(--fs-md);
+}
+
+.duel-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+.duel-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  text-align: left;
+  padding: var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-l);
+  cursor: pointer;
+  font: inherit;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), transform var(--t-fast);
+}
+.duel-action-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-m);
+  transform: translateY(-2px);
+}
+.duel-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-m);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.duel-action-card:last-child .duel-action-icon {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.duel-action-title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--ink);
+}
+.duel-action-desc {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: var(--lh-normal);
+}
+
+.duel-how {
+  margin-top: var(--sp-4);
+}
+.duel-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+.duel-step {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-md);
+  color: var(--ink);
+}
+.duel-step-num {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-pill);
+  background: var(--grad-primary);
+  color: #fff;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.duel-subject-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 760px) {
+  .duel-subject-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .duel-actions { grid-template-columns: 1fr; }
+}
+
+/* Lobby */
+.duel-lobby {
+  max-width: 520px;
+  margin: var(--sp-6) auto;
+  text-align: center;
+  padding: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  align-items: center;
+}
+.duel-lobby-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  text-align: left;
+  width: 100%;
+}
+.duel-lobby-head h2 { font-size: var(--fs-xl); margin-bottom: var(--sp-1); }
+.duel-lobby-head p { color: var(--ink-2); }
+
+.duel-code-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-5) 0;
+}
+.duel-code-label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.duel-code {
+  font-variant-numeric: tabular-nums;
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-indent: 0.28em;
+  background: var(--grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  line-height: 1.1;
+  user-select: all;
+}
+.duel-code-hint {
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  max-width: 340px;
+}
+
+.duel-status {
+  color: var(--ink-2);
+  font-size: var(--fs-md);
+}
+.duel-err {
+  color: var(--err);
+  font-size: var(--fs-md);
+}
+.duel-lobby-actions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.duel-code-input {
+  max-width: 260px;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: var(--fs-lg);
+  letter-spacing: 0.2em;
+  margin: var(--sp-2) auto;
+}
+.duel-join {
+  max-width: 520px;
+  margin: var(--sp-6) auto;
+}
+.duel-join .duel-err { margin-top: var(--sp-3); }
+
+/* Match */
+.duel-match {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.duel-vs {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.duel-pill {
+  flex: 1 1 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  align-items: flex-start;
+}
+.duel-pill:last-child {
+  background: var(--violet-soft);
+  border-color: color-mix(in srgb, var(--violet) 22%, transparent);
+}
+.duel-pill-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+.duel-pill:last-child .duel-pill-label { color: var(--violet); }
+.duel-pill-pts {
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  color: var(--ink);
+}
+.duel-pill-sub {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.duel-vs-middle {
+  display: flex;
+  align-items: center;
+  color: var(--accent-strong);
+}
+.duel-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--grad-primary);
+  transition: width var(--t-base);
+}
+.duel-pill:last-child .duel-fill { background: var(--grad-warm); }
+
+.duel-wait-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--ink-2);
+}
+
+/* Resultat */
+.duel-result { max-width: 560px; }
+.duel-final-scores {
+  display: flex;
+  gap: var(--sp-3);
+  width: 100%;
+}
+.duel-final-pill {
+  flex: 1 1 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  padding: var(--sp-4) var(--sp-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  align-items: center;
+  background: var(--surface-2);
+}
+.duel-final-pill:first-child { border-color: var(--ok-border); background: var(--ok-soft); }
+.duel-final-score {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.duel-final-score small {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.duel-final-time {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.duel-rematch-status {
+  min-height: 1.4em;
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+}

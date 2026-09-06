@@ -2,14 +2,14 @@
 import { h } from '../dom.js';
 import { icon } from '../icons.js';
 import { pageHead, crumbs, activityCard, fact } from '../components.js';
-import { subjectBySlug, quizById } from '../data.js';
-import { quizzesForSubject } from '../../data/quizzes.js';
+import { SUBJECT_BY_SLUG } from '../../data/subjects.js';
+import { QUIZ_BY_ID, quizzesForSubject } from '../../data/quizzes.js';
 import { track } from '../store.js';
 import { SUBJECT_ICON_COLORS } from '../components.js';
 
 export function renderSubject({ params }) {
   const slug = params.slug;
-  const s = subjectBySlug(slug);
+  const s = SUBJECT_BY_SLUG[slug] || null;
   if (!s) {
     return {
       title: 'Fag ikke funnet – Leonardo',
@@ -42,7 +42,7 @@ export function renderSubject({ params }) {
         h('h2', { text: 'Aktiviteter' }),
         h('span', { class: 'section-sub', text: `${activities.length} stk · klare når du vil` }),
       ),
-      h('div', { class: 'activity-list' }, ...activities.map((a) => activityCard(a, quizById))),
+      h('div', { class: 'activity-list' }, ...activities.map((a) => activityCard(a, (id) => QUIZ_BY_ID[id] || null))),
     ),
 
     h('section', { class: 'section', 'aria-label': 'Læringsmål' },

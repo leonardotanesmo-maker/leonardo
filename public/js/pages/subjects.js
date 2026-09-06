@@ -1,7 +1,7 @@
 // Leonardo – oversikt over alle fag
 import { h } from '../dom.js';
 import { subjectCards, pageHead, crumbs } from '../components.js';
-import { SUBJECTS } from '../data.js';
+import { SUBJECTS } from '../../data/subjects.js';
 
 export function renderSubjects() {
   const el = h('div', { class: 'container page-pad' },
