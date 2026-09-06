@@ -51,10 +51,16 @@
   .subject-card { padding: var(--sp-4); }
   .hero .hero-actions .btn { flex: 1; justify-content: center; }
 
-  /* Kartet på veldig små skjermer: høyere visning */
-  #world-map { min-width: 560px; }
-  .map-stage { overflow-x: auto; }
-  .map-stage svg { width: 560px; max-width: none; }
+  /* Utforsk-kartet på veldig små skjermer: høyere visning med horisontal rulling.
+     Quiz-kartet («Finn landet på kartet») er ikke inni .map-wrap og fyller derfor bredden. */
+  .map-wrap #world-map { min-width: 560px; }
+  .map-wrap .map-stage { overflow-x: auto; }
+  .map-wrap .map-stage svg { width: 560px; max-width: none; }
+
+  /* Kart-quizen: kompakt HUD på små skjermer */
+  .map-hud-top { flex-wrap: wrap; row-gap: var(--sp-2); }
+  .map-counts { margin-left: auto; }
+  .map-hud .quiz-q-text { font-size: var(--fs-lg); }
 }
 
 @media (pointer: coarse) {

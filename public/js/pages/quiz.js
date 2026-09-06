@@ -94,11 +94,11 @@ export function renderQuiz({ params }) {
       h('button', { class: 'setup-card math-op-card', type: 'button', style: { '--op-color': CONTINENT_COLORS[c.key] || 'var(--accent)' }, onclick: () => startQuiz({ continent: c.key }) },
         h('span', { class: 'setup-icon', html: icon('globe', 26) }),
         h('span', { class: 'setup-label', text: c.label }),
-        h('span', { class: 'setup-desc', text: 'Klikk på riktig sted på kartet' }),
+        h('span', { class: 'setup-desc', text: 'Finn alle landene – hele verdensdelen blir grønn' }),
       ),
     ));
 
-    renderSetupShell('Velg verdensdel', 'Hvilke land skal du finne på verdenskartet? Formene er den eneste ledetråden.', cards);
+    renderSetupShell('Velg verdensdel', 'Du skal finne hvert eneste land i verdensdelen. Riktige klikk blir grønne, og gale klikk teller som feil. Vinn ved å gjøre hele verdensdelen grønn!', cards);
   }
 
   function renderOperationStep() {

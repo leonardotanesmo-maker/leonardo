@@ -85,6 +85,7 @@ function onMove(e) {
 }
 
 function onLeave() {
+  unhighlight();
   hideTooltip();
 }
 

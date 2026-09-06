@@ -17,55 +17,330 @@
 
 #world-map .country {
   fill: var(--land);
-  stroke: #ffffff;
-  stroke-width: 0.7;
+  stroke: #111111;
+  stroke-width: 1.2;
   stroke-linejoin: round;
   transition: fill var(--t-fast);
   cursor: pointer;
 }
 #world-map .country:hover {
   fill: var(--land-hover);
+  stroke-width: 2;
 }
 #world-map .country.is-highlight {
   fill: var(--land-hover);
-  stroke: #ffffff;
+  stroke: #111111;
   stroke-width: 1.2;
 }
-#world-map .country.is-dim { opacity: 0.28; }
+#world-map .country.is-dim { opacity: 0.32; stroke-width: 1.2; }
 #world-map .country:focus {
   outline: none;
   fill: var(--land-hover);
 }
 #world-map .country:focus-visible {
-  stroke: #ffffff;
+  stroke: #111111;
   stroke-width: 2;
   filter: drop-shadow(0 0 4px rgba(58, 91, 217, 0.6));
 }
 
 /* ——— «Finn landet på kartet» (map-quiz) ——— */
-.quiz-shell-map { max-width: 920px; }
-.quiz-q-map { padding: var(--sp-4) 0; }
+/* Fullskjermsoppsett: kompakt toppfelt + kart som fyller resten – ingen rulling. */
+.container:has(.quiz-shell-map) .quiz-intro { display: none; }
+.container:has(.quiz-shell-map) .crumbs { display: none; }
+
+.quiz-shell-map {
+  max-width: none;
+  width: 100%;
+  height: calc(100vh - var(--header-h) - var(--sp-8) - var(--sp-10));
+  height: calc(100dvh - var(--header-h) - var(--sp-8) - var(--sp-10));
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Kompakt HUD: spørsmålet + tellere øverst */
+.quiz-hud {
+  padding: var(--sp-2) 0 var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.map-hud { display: flex; flex-direction: column; gap: var(--sp-2); }
+.map-hud-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.map-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: 750;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+}
+.map-eyebrow .ey-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c-geografi);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.map-counts { display: flex; align-items: center; gap: var(--sp-2); }
+.map-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.map-counter .cnt-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; }
+.map-counter b { font-size: var(--fs-base); font-weight: 800; line-height: 1; color: var(--ink); }
+.map-counter.is-ok { color: var(--ok); border-color: var(--ok-border); background: var(--ok-soft); }
+.map-counter.is-ok b { color: var(--ok); }
+.map-counter.is-ok .cnt-dot { background: var(--ok); }
+.map-counter.is-bad { color: var(--err); border-color: var(--err-border); background: var(--err-soft); }
+.map-counter.is-bad b { color: var(--err); }
+.map-counter.is-bad .cnt-dot { background: var(--err); }
+
+/* Tips-knapp (sirkel-hint rundt landet) */
+.map-hint-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  color: #8a5a00;
+  background: #fff5da;
+  border: 1px solid #f0dc9c;
+  cursor: pointer;
+  transition: transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast), opacity var(--t-fast);
+}
+.map-hint-btn .icon, .map-hint-btn .hint-ico { display: inline-flex; }
+.map-hint-btn .hint-label { text-transform: uppercase; }
+.map-hint-btn .hint-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #ffd257;
+  color: #6b4400;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.map-hint-btn:hover { border-color: #f0c75a; transform: translateY(-1px); box-shadow: var(--shadow-s); }
+.map-hint-btn:focus-visible { outline: none; border-color: var(--primary); box-shadow: var(--focus-ring); }
+.map-hint-btn.is-out { opacity: 0.45; cursor: not-allowed; }
+.map-hint-btn.is-out:hover { transform: none; box-shadow: none; border-color: #f0dc9c; }
+
+.map-hud .quiz-q-text {
+  margin: 0;
+  font-size: var(--fs-xl);
+  letter-spacing: -0.02em;
+  line-height: var(--lh-tight);
+}
+.map-hud .quiz-q-text .q-name {
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.map-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-1);
+}
+.map-found {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.map-progress .quiz-track { flex: 1; height: 6px; }
+
 .quiz-map-hint {
   color: var(--ink-3);
   font-size: var(--fs-xs);
-  margin: 0 0 var(--sp-4);
-  text-align: center;
+  margin: var(--sp-1) 0 0;
 }
 .map-stage-quiz {
+  position: relative;
+  flex: 1;
+  min-height: 0;
   border-radius: var(--r-l);
   overflow: hidden;
 }
+.map-stage-quiz svg {
+  width: 100%;
+  height: 100%;
+}
 .map-stage-quiz .map-loading { min-height: 320px; }
+
+/* Zoom-kontroll: + / − / vis hele verdensdelen, nede til høyre på kartet */
+.map-zoom {
+  position: absolute;
+  right: var(--sp-3);
+  bottom: var(--sp-3);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  box-shadow: var(--shadow-m);
+}
+.map-zoom-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  border-radius: var(--r-s);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.map-zoom-btn:hover { background: var(--surface-2); color: var(--ink); }
+.map-zoom-btn:active { transform: scale(0.92); }
+.map-zoom-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* Tilbakemelding: toast nederst midt på kartet */
+.quiz-fb-float {
+  display: flex;
+  position: absolute;
+  left: 50%;
+  bottom: var(--sp-5);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(92%, 520px);
+  margin: 0;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  box-shadow: var(--shadow-m);
+  color: var(--ink-2);
+  animation: fbIn var(--t-base);
+  z-index: 7;
+}
+@keyframes fbIn {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.quiz-fb-float .fb-chip {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  box-shadow: var(--shadow-s);
+}
+.quiz-fb-float .fb-text { font-weight: 650; color: var(--ink); }
+.quiz-fb-float .fb-text .explain { font-weight: 550; color: var(--ink-2); margin-top: 2px; }
+.quiz-fb-float.is-good { background: var(--ok-soft); border: 1px solid var(--ok-border); color: var(--ok); }
+.quiz-fb-float.is-good .fb-chip { background: var(--ok); }
+.quiz-fb-float.is-good .fb-text strong { color: var(--ok); }
+.quiz-fb-float.is-good .fb-text .explain { color: #0c5a36; }
+.quiz-fb-float.is-bad { background: var(--err-soft); border: 1px solid var(--err-border); color: var(--err); }
+.quiz-fb-float.is-bad .fb-chip { background: var(--err); }
+.quiz-fb-float.is-bad .fb-text strong { color: var(--err); }
+.quiz-fb-float.is-bad .fb-text .explain { color: #7e2222; }
+
+/* Overlegg (vinnskjerm, feilmeldinger) midtstilt over kartet */
+.quiz-map-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+.quiz-map-overlay > * { pointer-events: auto; }
+.quiz-map-overlay.is-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: rgba(246, 247, 251, 0.45);
+  backdrop-filter: blur(3px);
+}
+.quiz-map-win {
+  max-width: 460px;
+  width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  margin: 0;
+}
+
+/* Vinnskjerm: badge + treffsikkerhetsring */
+.map-win-badge { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); }
+.map-win-badge .result-icon { margin-bottom: 0; }
+.map-win-eyebrow {
+  margin: 0;
+  font-size: var(--fs-xs);
+  font-weight: 750;
+  letter-spacing: 0.16em;
+  color: var(--ink-3);
+}
+.quiz-win-ring-wrap { display: block; margin: var(--sp-4) auto var(--sp-3); }
+.quiz-win-ring { display: block; width: 148px; height: 148px; }
+.quiz-win-ring .rr-track { fill: none; stroke: var(--surface-3); stroke-width: 10; }
+.quiz-win-ring .rr-val {
+  fill: none;
+  stroke: url(#ring-grad);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--t-slow);
+}
+.quiz-win-ring .rr-num {
+  fill: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 32px;
+  font-weight: 800;
+  text-anchor: middle;
+  dominant-baseline: central;
+  letter-spacing: -0.02em;
+}
+.quiz-win-ring .rr-unit { font-size: 15px; font-weight: 750; fill: var(--ink-3); }
 
 #world-map .country.is-dim { pointer-events: none; }
 #world-map .country.is-correct {
-  fill: var(--ok);
-  stroke: #ffffff;
+  fill: #f6efdd;
+  stroke: #111111;
   stroke-width: 1.2;
+}
+#world-map .country-flag {
+  pointer-events: none;
 }
 #world-map .country.is-wrong {
   fill: var(--err);
-  stroke: #ffffff;
+  stroke: #111111;
   stroke-width: 1.2;
 }
 .quiz-shell-map.is-locked #world-map .country:hover { fill: var(--land); }
@@ -75,6 +350,28 @@
   pointer-events: none;
 }
 
+/* Vunnet: hele verdensdelen er grønn – ferdigfunne land er ikke klikkbare */
+.quiz-shell-map.is-done #world-map .country { pointer-events: none; cursor: default; }
+.quiz-shell-map.is-done #world-map .country:hover { fill: var(--land); }
+
+/* Sirkel-hint: stor, markert sirkel rundt (omtrentlig) hvor landet ligger.
+   Viser ikke den nøyaktige plasseringen – tegnes i kartets egne koordinater. */
+#world-map .map-hint-ring {
+  fill: rgba(255, 224, 130, 0.18);
+  stroke: #f5b532;
+  stroke-width: 2.5;
+  stroke-dasharray: 10 7;
+  pointer-events: none;
+  animation: hintPulse 1.1s ease-in-out infinite;
+  transform-origin: center;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.18));
+}
+@keyframes hintPulse {
+  0%, 100% { stroke-opacity: 1; fill-opacity: 0.14; }
+  50% { stroke-opacity: 0.5; fill-opacity: 0.26; }
+}
+
+/* Resultatkort for kartquiz */
 @media (max-width: 560px) {
   .quiz-shell-map { max-width: 100%; }
 }

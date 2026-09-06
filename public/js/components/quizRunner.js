@@ -12,11 +12,26 @@ import { h, q, qa, clear } from '../dom.js';
 import { icon } from '../icons.js';
 import { COUNTRIES, formatPopulation } from '../../data/countries.js';
 import { countryByNumeric, countryByIso2 } from '../data.js';
+import { MAP_BBOX } from '../../data/mapBBox.js';
 import { loadMapOn } from './map.js';
 import { generateMathQuiz } from '../../data/mathGenerator.js';
 import { track } from '../store.js';
 
 const LETTERS = ['A', 'B', 'C', 'D'];
+
+// Zoom-vinduer per verdensdel (i kartets brukerkoordinater, fra assets/map.svg).
+// Håndjustert ut fra målte landgeometrier så landene blir store og lette å treffe.
+// Vinduer dekker alle pool-landene selv om noen blir delvis beskåret (f.eks.
+// Russland mot øst, Brasil mot sørøst). Merk av og til må disse kalibreres på nytt
+// hvis assets/map.svg erstattes.
+const MAP_ZOOMS = {
+  Europe: { x0: 524, x1: 724, y0: 14, y1: 232 },
+  Africa: { x0: 540, x1: 762, y0: 152, y1: 438 },
+  Asia: { x0: 694, x1: 1044, y0: 92, y1: 342 },
+  'North America': { x0: 104, x1: 588, y0: 8, y1: 282 },
+  'South America': { x0: 330, x1: 470, y0: 238, y1: 462 },
+  Oceania: { x0: 920, x1: 1140, y0: 295, y1: 482 },
+};
 
 export const DIFFICULTY_LABELS = { easy: 'Lett', medium: 'Middels', hard: 'Vanskelig' };
 export const OPERATION_LABELS = {
@@ -323,12 +338,17 @@ class Drill extends BaseQuiz {
 function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
 // «Finn landet på kartet» – typen `map`.
-// Spilleren får et lands navn og skal klikke på riktig sted på verdenskartet.
+// Du velger en verdensdel, så skal du klikke på riktig sted for hvert land i den
+// verdensdelen. Landene du finner blir grønne og blir værende grønne. Når alle
+// landene er funnet (hele verdensdelen er grønn), vinner du quizen.
 // Verktøytips og landnavn er skrudd av (quiet), så det er formasjonen de gjetter på.
 class MapQuiz extends BaseQuiz {
   build() {
     this.ready = false;
-    this.locked = false;
+    this.won = false;
+    this.fail = 0;
+    this.hints = 10;
+    this.found = new Set();
     this.pathByIso = {};
     this.continentPool = new Set();
     const contInfo = (this.quiz.continents || []).find((c) => c.key === this.opts.continent);
@@ -337,22 +357,11 @@ class MapQuiz extends BaseQuiz {
   }
 
   render() {
-    this.topHost = h('div', { class: 'quiz-top' });
-    this.qHost = h('h2', { class: 'quiz-q-text', text: 'Forbereder kartet …' });
-    const hint = h('p', { class: 'quiz-map-hint', text: 'Hold musen over kartet for å se landformene. Klikk på landet du tror er riktig.' });
+    this.panel = h('div', { class: 'quiz-hud' });
     this.mapStage = h('div', { class: 'map-stage map-stage-quiz' },
       h('div', { class: 'map-loading', html: icon('globe', 22) + ' Laster verdenskartet …' }),
     );
-    this.fbHost = h('div', { class: 'quiz-feedback', role: 'status' });
-    this.actHost = h('div', { class: 'quiz-actions' });
-    this.qWrap = h('div', { class: 'quiz-q quiz-q-map' },
-      this.qHost,
-      hint,
-      this.mapStage,
-      this.fbHost,
-      this.actHost,
-    );
-    this.shell = h('div', { class: 'quiz-shell quiz-shell-map' }, this.topHost, this.qWrap);
+    this.shell = h('div', { class: 'quiz-shell quiz-shell-map' }, this.panel, this.mapStage);
     return this.shell;
   }
 
@@ -368,15 +377,29 @@ class MapQuiz extends BaseQuiz {
     const paths = qa('.country', this.mapStage);
     this.ready = true;
     if (!paths.length) {
-      this.qHost.textContent = 'Kunne ikke laste kartet';
-      this.fbHost.classList.add('is-bad');
-      this.fbHost.innerHTML = `<span class="fb-icon">${icon('close', 18)}</span><div class="fb-text"><strong>Noe gikk galt.</strong><div class="explain">Kartet kunne ikke lastes. Last siden på nytt og prøv igjen.</div></div>`;
-      this.actHost.appendChild(h('a', { class: 'btn btn-primary', href: '#/fag/quiz', html: 'Tilbake til quizer' + icon('arrow', 15) }));
+      this.mapStage.appendChild(h('div', { class: 'quiz-map-overlay is-center' },
+        h('div', { class: 'card result-card quiz-map-win' },
+          h('div', { class: 'result-icon', html: icon('close', 44) }),
+          h('div', { class: 'result-heading', text: 'Kunne ikke laste kartet' }),
+          h('div', { class: 'result-sub', text: 'Last siden på nytt og prøv igjen.' }),
+          h('div', { class: 'result-actions' },
+            h('a', { class: 'btn btn-primary', href: '#/fag/quiz', text: 'Tilbake til quizer' }),
+          ),
+        ),
+      ));
       return;
     }
     this.buildPool(paths);
-    this.index = 0;
-    this.renderQuestion();
+    this.pending = this.questions.slice();
+    this.advance();
+    if (!this.zoomEl) {
+      this.zoomEl = h('div', { class: 'map-zoom' },
+        h('button', { class: 'map-zoom-btn', type: 'button', 'aria-label': 'Zoom inn', title: 'Zoom inn', html: icon('plus', 18), onclick: () => this.zoom(0.72) }),
+        h('button', { class: 'map-zoom-btn', type: 'button', 'aria-label': 'Zoom ut', title: 'Zoom ut', html: icon('minus', 18), onclick: () => this.zoom(1.4) }),
+        h('button', { class: 'map-zoom-btn', type: 'button', 'aria-label': 'Vis hele verdensdelen', title: 'Vis hele verdensdelen', html: icon('home', 18), onclick: () => this.applyContinentZoom() }),
+      );
+      this.mapStage.appendChild(this.zoomEl);
+    }
   }
 
   buildPool(paths) {
@@ -385,20 +408,51 @@ class MapQuiz extends BaseQuiz {
       const c = countryByNumeric(p.getAttribute('data-numeric'));
       if (c) this.pathByIso[c.id] = p;
     }
-    const pool = COUNTRIES.filter((c) =>
-      c && c.flagFile && c.population > 0 &&
-      this.pathByIso[c.id] &&
+    const frame = MAP_ZOOMS[this.continent];
+    let pool = COUNTRIES.filter((c) =>
+      c && c.flagFile && c.population > 0 && this.pathByIso[c.id] &&
       this.regionKeyOfCountry(c) === this.continent,
     );
+    // Hopp over land som ligger helt utenfor zoom-vinduet (kan ikke besvares).
+    // Bruker statisk målte geometrier (MAP_BBOX) i stedet for getBBox, som gir
+    // null-bokser mens kartet er løsrevet fra dokumentet.
+    if (frame) {
+      pool = pool.filter((c) => {
+        const b = MAP_BBOX[c.id];
+        if (!b) return true;
+        return b[0] < frame.x1 && b[2] > frame.x0 && b[1] < frame.y1 && b[3] > frame.y0;
+      });
+    }
     this.continentPool = new Set(pool.map((c) => c.id));
     for (const id of Object.keys(this.pathByIso)) {
       const p = this.pathByIso[id];
       const show = this.continentPool.has(id);
       p.classList.toggle('is-dim', !show);
       p.setAttribute('aria-hidden', show ? 'false' : 'true');
+      p.classList.remove('is-correct', 'is-wrong', 'is-highlight');
+      if (p._wrongTimer) { clearTimeout(p._wrongTimer); p._wrongTimer = null; }
+      p.style.fill = '';
+      const svgEl = this.mapStage ? q('svg#world-map', this.mapStage) : null;
+      if (svgEl) {
+        qa('.country-flag', svgEl).forEach((f) => { if (f.parentElement) f.remove(); });
+        const defs = q('defs', svgEl);
+        if (defs) qa('clipPath[id^="flagclip-"]', defs).forEach((cp) => { if (cp.parentElement) cp.remove(); });
+      }
     }
-    const count = Math.min(this.quiz.count || 10, pool.length);
-    this.questions = shuffle(pool).slice(0, count).map((c) => ({ id: c.id, name: c.name, c }));
+    this.questions = shuffle(pool).map((c) => ({ id: c.id, name: c.name, c }));
+    this.total = this.questions.length;
+    this.applyContinentZoom();
+  }
+
+  // Zoom kartet inn på kontinentet så landene blir store og lette å treffe.
+  applyContinentZoom() {
+    if (MAP_ZOOMS[this.continent]) this.setViewBox(MAP_ZOOMS[this.continent]);
+  }
+
+  setViewBox(z) {
+    const svgEl = this.mapStage ? q('svg#world-map', this.mapStage) : null;
+    if (!svgEl) return;
+    svgEl.setAttribute('viewBox', `${z.x0} ${z.y0} ${z.x1 - z.x0} ${z.y1 - z.y0}`);
   }
 
   regionKeyOfCountry(c) {
@@ -411,65 +465,294 @@ class MapQuiz extends BaseQuiz {
     return cont || region || '';
   }
 
-  renderQuestion() {
-    const qd = this.questions[this.index];
-    if (!qd) { this.goToResult(); return; }
-    this.locked = false;
-    this.shell.classList.remove('is-locked');
-    clear(this.topHost);
-    this.topHost.appendChild(this.renderProgress());
-    this.qHost.textContent = `Hvor ligger ${qd.name}?`;
-    this.fbHost.classList.remove('is-good', 'is-bad');
-    clear(this.fbHost);
-    clear(this.actHost);
-    for (const p of qa('.country', this.mapStage)) {
-      p.classList.remove('is-correct', 'is-wrong', 'is-highlight');
+  // Hent neste land (i tilfeldig rekkefølge). Er alle funnet, vant du quizen.
+  advance() {
+    this.clearHint();
+    if (this._fbTimer) { clearTimeout(this._fbTimer); this._fbTimer = null; }
+    this.current = this.pending.pop() || null;
+    if (!this.current) {
+      this.won = true;
+      this.shell.classList.add('is-done');
+      this.setViewBox({ x0: 0, y0: 0, x1: 1200, y1: 600 });
+      this.goToResult();
+      return;
     }
+    this.renderPanelPlay();
+  }
+
+  renderPanelPlay() {
+    this.removeOverlay();
+    if (this.fbHost && this.fbHost.parentElement) this.fbHost.remove();
+    clear(this.panel);
+    const foundN = this.found.size;
+    const pct = this.total ? Math.round((foundN / this.total) * 100) : 0;
+    this.fbHost = h('div', { class: 'quiz-feedback quiz-fb-float', role: 'status' });
+    this.mapStage.appendChild(this.fbHost);
+    this.panel.append(
+      h('div', { class: 'map-hud' },
+        h('div', { class: 'map-hud-top' },
+          h('span', { class: 'map-eyebrow' }, h('span', { class: 'ey-dot' }), this.difficulty.toUpperCase()),
+          h('div', { class: 'map-counts' },
+            h('span', { class: 'map-counter is-ok', title: 'Riktige svar' },
+              h('span', { class: 'cnt-dot' }), ' Riktige ', h('b', { text: String(foundN) })),
+            h('span', { class: 'map-counter is-bad', title: 'Feil svar' },
+              h('span', { class: 'cnt-dot' }), ' Feil ', h('b', { text: String(this.fail) })),
+            h('button', { class: 'map-hint-btn', type: 'button', title: 'Vis et stort sirkel-hint rundt hvor landet ligger (varer i 5 sekunder)', onclick: () => this.useHint() },
+              h('span', { class: 'hint-ico', html: icon('target', 15) }),
+              h('span', { class: 'hint-label', text: 'Tips' }),
+              h('b', { class: 'hint-count', text: String(this.hints) })),
+          ),
+        ),
+        h('h2', { class: 'quiz-q-text' }, 'Finn: ', h('span', { class: 'q-name', text: this.current.name })),
+        h('div', { class: 'map-progress' },
+          h('span', { class: 'map-found', text: `${foundN} / ${this.total}` }),
+          h('div', { class: 'quiz-track' }, h('div', { class: 'quiz-fill', style: { width: pct + '%' } })),
+        ),
+      ),
+    );
+    // Forklaring vises bare i starten av runden, så hele skjermen går til kartet.
+    if (foundN === 0 && this.fail === 0) {
+      this.panel.append(h('p', { class: 'quiz-map-hint', text: this.hintText() }));
+    }
+  }
+
+  removeOverlay() {
+    if (!this.mapStage) return;
+    const host = q('.quiz-map-overlay', this.mapStage);
+    if (host && host.parentElement) host.remove();
+  }
+
+  hintText() {
+    return `Kartet er zoomet inn på ${this.difficulty}. Landformene er den eneste ledetråden – klikk på landet som vises. Sitter du fast, bruk «Tips» for å se et stort sirkel-hint rundt der landet (sånn cirka) ligger.`;
+  }
+
+  updateCounters() {
+    const okN = q('.map-counter.is-ok b', this.panel);
+    const badN = q('.map-counter.is-bad b', this.panel);
+    const found = q('.map-found', this.panel);
+    const fill = q('.quiz-fill', this.panel);
+    const foundN = this.found.size;
+    if (okN) okN.textContent = String(foundN);
+    if (badN) badN.textContent = String(this.fail);
+    if (found) found.textContent = `${foundN} / ${this.total}`;
+    if (fill) fill.style.width = (this.total ? Math.round((foundN / this.total) * 100) : 0) + '%';
+  }
+
+  updateHintBtn() {
+    const btn = q('.map-hint-btn', this.panel);
+    if (!btn) return;
+    btn.classList.toggle('is-out', this.hints <= 0);
+    btn.disabled = this.hints <= 0;
+    const c = q('.hint-count', btn);
+    if (c) c.textContent = String(this.hints);
+  }
+
+  // Tipset tegner et stort sirkel-hint rundt (omtrentlig) hvor landet ligger.
+  // Det viser ikke den nøyaktige plasseringen – bare «sånn cirka i dette området».
+  useHint() {
+    if (!this.ready || this.won || !this.current || this.hints <= 0) return;
+    const svgEl = this.mapStage ? q('svg#world-map', this.mapStage) : null;
+    if (!svgEl) return;
+    this.clearHint();
+    this.hints -= 1;
+    this.updateHintBtn();
+
+    const bb = MAP_BBOX[this.current.id];
+    const cx = bb ? (bb[0] + bb[2]) / 2 : 960;
+    const cy = bb ? (bb[1] + bb[3]) / 2 : 300;
+    // R er minst 26, og ellers stor nok til å romme landet (pluss litt luft).
+    let r = bb ? (Math.max(bb[2] - bb[0], bb[3] - bb[1]) / 2) * 1.35 : 34;
+    r = Math.max(26, Math.min(r, 190));
+
+    // Sirkelen legges til som SVG-streng (h() lager HTML-elementer som ikke tegnes i SVG).
+    svgEl.insertAdjacentHTML('beforeend',
+      `<circle class="map-hint-ring" cx="${cx}" cy="${cy}" r="${r}" aria-hidden="true"></circle>`);
+
+    if (this._hintTimer) clearTimeout(this._hintTimer);
+    this._hintTimer = setTimeout(() => {
+      this._hintTimer = null;
+      const c = q('.map-hint-ring', svgEl);
+      if (c && c.parentElement) c.remove();
+    }, 5000);
+  }
+
+  clearHint() {
+    if (this._hintTimer) { clearTimeout(this._hintTimer); this._hintTimer = null; }
+    if (!this.mapStage) return;
+    const c = q('.map-hint-ring', this.mapStage);
+    if (c && c.parentElement) c.remove();
+  }
+
+  // Fyller landet med flagget sitt, klippet inn i landets egen fasong.
+  markFound() {
+    const svgEl = this.mapStage ? q('svg#world-map', this.mapStage) : null;
+    const c = this.current && this.current.c;
+    const id = this.current && this.current.id;
+    const bb = id ? MAP_BBOX[id] : null;
+    if (!svgEl || !c || !c.flagFile || !bb) return;
+    const pathEl = this.pathByIso[id];
+    if (!pathEl || q('.country-flag[data-iso="' + id + '"]', svgEl)) return;
+    const [x0, y0, x1, y1] = bb;
+    const w = x1 - x0;
+    const h = y1 - y0;
+    if (!(w > 0) || !(h > 0)) return;
+    if (!svgEl.getAttribute('xmlns:xlink')) svgEl.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+    pathEl.setAttribute('id', 'fp-' + id);
+    const clipId = 'flagclip-' + id;
+    if (!q('#' + clipId, svgEl)) {
+      let defs = q('defs', svgEl);
+      if (!defs) {
+        defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        svgEl.insertBefore(defs, svgEl.firstChild);
+      }
+      defs.insertAdjacentHTML('beforeend',
+        `<clipPath id="${clipId}"><use href="#fp-${id}" xlink:href="#fp-${id}"></use></clipPath>`);
+    }
+    svgEl.insertAdjacentHTML('beforeend',
+      `<image class="country-flag" data-iso="${id}" href="${c.flagFile}" xlink:href="${c.flagFile}" x="${x0}" y="${y0}" width="${w}" height="${h}" preserveAspectRatio="none" clip-path="url(#${clipId})" aria-hidden="true"></image>`);
+  }
+
+  // Zoom inn/ut rundt midten av det som vises, uten å gå utenfor verdenskartet.
+  zoom(factor) {
+    const svgEl = this.mapStage ? q('svg#world-map', this.mapStage) : null;
+    if (!svgEl) return;
+    const vb = (svgEl.getAttribute('viewBox') || '').split(' ').map(Number);
+    if (vb.length !== 4 || vb.some((n) => !Number.isFinite(n))) return;
+    const [vx, vy, vw, vh] = vb;
+    const cx = vx + vw / 2;
+    const cy = vy + vh / 2;
+    let nw = Math.min(vw * factor, 1200);
+    let nh = Math.min(vh * factor, 600);
+    nw = Math.max(nw, 40);
+    nh = Math.max(nh, 40);
+    const nx = Math.max(0, Math.min(cx - nw / 2, 1200 - nw));
+    const ny = Math.max(0, Math.min(cy - nh / 2, 600 - nh));
+    svgEl.setAttribute('viewBox', `${nx} ${ny} ${nw} ${nh}`);
   }
 
   guess(id, el) {
-    if (this.locked || !this.ready || !this.questions.length) return;
-    const qd = this.questions[this.index];
+    if (!this.ready || this.won || !this.current) return;
+    if (this._fbTimer) { clearTimeout(this._fbTimer); this._fbTimer = null; }
     const clicked = countryByIso2(id);
-    if (!clicked || !this.continentPool.has(id)) return;
-    this.locked = true;
-    this.shell.classList.add('is-locked');
-    for (const p of qa('.country.is-highlight', this.mapStage)) p.classList.remove('is-highlight');
-    if (id === qd.id) {
-      this.score++;
-      el.classList.add('is-correct');
-      this.fbHost.classList.add('is-good');
-      this.fbHost.innerHTML = `<span class="fb-icon">${icon('check', 18)}</span><div class="fb-text"><strong>Riktig!</strong><div class="explain">${qd.c.name} ligger her.${qd.c.capital ? ' Hovedstaden er ' + qd.c.capital + '.' : ''}</div></div>`;
-    } else {
-      el.classList.add('is-wrong');
-      const correctPath = this.pathByIso[qd.id];
-      if (correctPath) correctPath.classList.add('is-correct');
-      this.fbHost.classList.add('is-bad');
-      this.fbHost.innerHTML = `<span class="fb-icon">${icon('close', 18)}</span><div class="fb-text"><strong>Feil svar.</strong><div class="explain">${qd.c.name} ligger her – du klikket på ${clicked.name}.</div></div>`;
+    if (!clicked) return;
+    if (!this.continentPool.has(id)) {
+      this.fbHost.classList.remove('is-good', 'is-bad');
+      this.fbHost.innerHTML = `<span class="fb-chip">${icon('target', 16)}</span><div class="fb-text">Klikk innenfor ${this.difficulty} – ${clicked.name} ligger utenfor.</div>`;
+      return;
     }
-    this.actHost.appendChild(h('button', { class: 'btn btn-primary', type: 'button', html: (this.index === this.questions.length - 1 ? 'Se resultat' : 'Neste') + icon('arrow', 15), onclick: () => this.next() }));
+    if (this.found.has(id)) {
+      this.fbHost.classList.remove('is-good', 'is-bad');
+      this.fbHost.innerHTML = `<span class="fb-chip">${icon('check', 16)}</span><div class="fb-text"><strong>Allerede funnet.</strong><div class="explain">${clicked.name} er ferdig. Finn ${this.current.name}.</div></div>`;
+      return;
+    }
+    if (id === this.current.id) {
+      this.found.add(id);
+      el.classList.remove('is-wrong');
+      el.classList.add('is-correct');
+      this.markFound();
+      this.fbHost.classList.add('is-good');
+      const praise = ['Riktig!', 'Flott!', 'Der ja!', 'Midt i blinken!', 'Kjempebra!', 'Nesten som en globus-professor!'];
+      this.fbHost.innerHTML = `<span class="fb-chip">${icon('check', 16)}</span><div class="fb-text"><strong>${praise[Math.floor(Math.random() * praise.length)]}</strong><div class="explain">${this.current.name} ligger her.${this.current.c.capital ? ' Hovedstaden er ' + this.current.c.capital + '.' : ''}</div></div>`;
+      this.updateCounters();
+      if (this._advanceTimer) clearTimeout(this._advanceTimer);
+      this._advanceTimer = setTimeout(() => { this._advanceTimer = null; this.advance(); }, 900);
+    } else {
+      this.fail++;
+      el.classList.remove('is-correct');
+      el.classList.add('is-wrong');
+      if (el._wrongTimer) clearTimeout(el._wrongTimer);
+      el._wrongTimer = setTimeout(() => {
+        el._wrongTimer = null;
+        if (el.classList) el.classList.remove('is-wrong');
+      }, 2000);
+      this.fbHost.classList.add('is-bad');
+      this.fbHost.innerHTML = `<span class="fb-chip">${icon('close', 16)}</span><div class="fb-text"><strong>Feil svar.</strong><div class="explain">Du klikket på ${clicked.name}. ${this.current.name} ligger et annet sted – prøv igjen.</div></div>`;
+      this._fbTimer = setTimeout(() => {
+        this._fbTimer = null;
+        this.hideFeedback();
+      }, 3000);
+      this.updateCounters();
+    }
   }
 
-  next() {
-    this.index++;
-    const qd = this.questions[this.index];
-    if (!qd) { this.goToResult(); return; }
-    this.renderQuestion();
+  hideFeedback() {
+    if (!this.fbHost || !this.fbHost.parentElement) return;
+    this.fbHost.classList.remove('is-good', 'is-bad');
+    this.fbHost.innerHTML = '';
   }
 
   goToResult() {
-    const res = this.renderResult();
-    if (this.el.parentElement) this.el.replaceWith(res);
-    this.el = res;
+    this.removeOverlay();
+    if (this.fbHost && this.fbHost.parentElement) this.fbHost.remove();
+    clear(this.panel);
+    const total = this.total || this.found.size;
+    const fail = this.fail;
+    const acc = total + fail ? Math.round((total / (total + fail)) * 100) : 100;
+    const praise = acc >= 100 ? 'Perfekt! Hvert eneste land satt på første forsøk.'
+      : acc >= 90 ? 'Kjempebra! Nesten ikke et feiltrykk.'
+      : acc >= 70 ? 'Godt jobbet – du vet godt hvor ting ligger.'
+      : acc >= 50 ? 'Du er på vei. Prøv igjen for færre feil!'
+      : 'Øv litt til som lokalkjent – så sitter det mye bedre.';
+    const card = h('div', { class: 'card result-card quiz-map-win' },
+      h('div', { class: 'map-win-badge' },
+        h('div', { class: 'result-icon', html: icon('trophy', 30) }),
+        h('p', { class: 'map-win-eyebrow', text: 'GJENNOMFØRT' }),
+      ),
+      h('div', { class: 'result-heading', text: `Du fant alle ${total} landene${this.difficulty ? ' i ' + this.difficulty : ''}!` }),
+      this.ring(acc),
+      h('div', { class: 'result-sub', text: praise }),
+      h('div', { class: 'result-stats' },
+        h('div', { class: 'rs-item is-good' }, h('div', { class: 'rs-icon', html: icon('check', 16) }), h('div', {}, h('div', { class: 'rs-num', text: String(total) }), h('div', { class: 'rs-label', text: 'Riktige' }))),
+        h('div', { class: 'rs-item is-bad' }, h('div', { class: 'rs-icon', html: icon('close', 16) }), h('div', {}, h('div', { class: 'rs-num', text: String(fail) }), h('div', { class: 'rs-label', text: 'Feil' }))),
+        h('div', { class: 'rs-item is-meta' }, h('div', { class: 'rs-icon', html: icon('flag', 16) }), h('div', {}, h('div', { class: 'rs-num', text: String(total + fail) }), h('div', { class: 'rs-label', text: 'Klikk totalt' }))),
+      ),
+      h('div', { class: 'result-actions' },
+        h('button', { class: 'btn btn-primary', type: 'button', html: icon('play', 16) + ' Spill igjen', onclick: () => this.restart() }),
+        h('a', { class: 'btn btn-ghost', href: '#/fag/' + this.quiz.subject, html: icon('book', 16) + ' Faget' }),
+        h('a', { class: 'btn btn-ghost', href: '#/fag/quiz', html: icon('bolt', 16) + ' Andre quizer' }),
+      ),
+    );
+    this.mapStage.appendChild(h('div', { class: 'quiz-map-overlay is-center' }, card));
+  }
+
+  // Prosentring som drar seg rundt når vinnskjermen vises.
+  ring(acc) {
+    const R = 42;
+    const CIRC = (2 * Math.PI * R).toFixed(2);
+    const host = h('span', { class: 'quiz-win-ring-wrap' });
+    host.innerHTML = `<svg class="quiz-win-ring" viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#3a5bd9"/>
+          <stop offset="0.55" stop-color="#5b4ad1"/>
+          <stop offset="1" stop-color="#7b5cd6"/>
+        </linearGradient>
+      </defs>
+      <circle class="rr-track" cx="50" cy="50" r="${R}"/>
+      <circle class="rr-val" cx="50" cy="50" r="${R}" transform="rotate(-90 50 50)"/>
+      <text class="rr-num" x="50" y="50" text-anchor="middle">${acc}<tspan class="rr-unit">%</tspan></text>
+    </svg>`;
+    const val = host.querySelector('.rr-val');
+    val.style.strokeDasharray = CIRC;
+    val.style.strokeDashoffset = CIRC;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      val.style.strokeDashoffset = (CIRC * (1 - acc / 100)).toFixed(2);
+    }));
+    return host;
   }
 
   restart() {
-    this.score = 0;
-    this.index = 0;
+    if (this._advanceTimer) clearTimeout(this._advanceTimer);
+    if (this._wrongTimer) clearTimeout(this._wrongTimer);
+    this.won = false;
+    this.fail = 0;
+    this.hints = 10;
+    this.found = new Set();
+    this.clearHint();
+    this.shell.classList.remove('is-done');
     this.buildPool(qa('.country', this.mapStage));
-    if (this.el.parentElement) this.el.replaceWith(this.shell);
-    this.el = this.shell;
-    this.renderQuestion();
-    if (this.el.scrollIntoView) this.el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    this.pending = this.questions.slice();
+    this.advance();
+    if (this.shell.scrollIntoView) this.shell.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
 }

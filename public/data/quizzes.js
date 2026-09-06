@@ -229,10 +229,10 @@ export const QUIZZES = [
     id: 'finn-pa-kartet',
     subject: 'geografi',
     title: 'Finn landet på kartet',
-    description: 'Du får et lands navn og skal klikke riktig sted på verdenskartet. Ingen ledetråder – kjenn igjen landet på landet selv.',
+    description: 'Finn alle landene i en verdensdel! Du får ett lands navn av gangen og klikker riktig sted på kartet. Landene du finner blir grønne – finn dem alle, med riktige- og flere-tegnere.',
     icon: 'globe',
     type: 'map',
-    count: 8,
+    count: 10,
     continents: [
       { key: 'Europe', label: 'Europa' },
       { key: 'Africa', label: 'Afrika' },
