@@ -22,13 +22,23 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--glow-bg);
+}
+
 h1, h2, h3, h4 {
   font-family: var(--font-display);
   line-height: var(--lh-tight);
   font-weight: 800;
   color: var(--ink);
   margin: 0 0 var(--sp-3);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
 }
 
 h1 { font-size: var(--fs-3xl); }

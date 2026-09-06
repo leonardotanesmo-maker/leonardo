@@ -37,6 +37,12 @@
 
   .page-head .page-actions { width: 100%; }
   .page-head .btn { flex: 1; justify-content: center; }
+
+  /* Oppsett */
+  .setup-grid, .setup-grid[style] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .setup-shell { padding: var(--sp-5) var(--sp-4); }
+  .result-stats { grid-template-columns: 1fr; }
+  .quiz-intro-row { align-items: flex-start; }
 }
 
 @media (max-width: 440px) {

@@ -1,27 +1,59 @@
-// Leonardo – quizmotoren (valg-, flagg- og innskrivingstype)
+// Leonardo – quizmotoren (valg-, flagg-, innskriving- og math-type)
+//
+// config:
+//   { difficulty: 'easy'|'medium'|'hard' (standard 'medium'),
+//     operation: 'add'|'sub'|'mul'|'div'|'mixed' (kun math) }
+//
+// Randomisering:
+//   - Spørsmålene stokkes i rekkefølge
+//   - Svaralternativer stokkes per spørsmål (riktig svar følger med)
+//   - Hver runde får derfor sjelden samme quiz to ganger
 import { h, q, qa } from '../dom.js';
 import { icon } from '../icons.js';
 import { COUNTRIES, formatPopulation } from '../../data/countries.js';
+import { generateMathQuiz } from '../../data/mathGenerator.js';
 import { track } from '../store.js';
 
 const LETTERS = ['A', 'B', 'C', 'D'];
+
+export const DIFFICULTY_LABELS = { easy: 'Lett', medium: 'Middels', hard: 'Vanskelig' };
+export const OPERATION_LABELS = {
+  add: 'Pluss', sub: 'Minus', mul: 'Ganging', div: 'Deling', mixed: 'Blandet',
+};
 
 // Forhindrer prototype-pollution-relaterte problemer i bygd regex
 function clean(s) {
   return String(s || '').replace(/[^\p{L}\p{N} ]/gu, '').trim();
 }
 
-export function quizRunner(quiz, onDone) {
-  track('quiz', quiz.id, quiz.title);
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
-  if (quiz.type === 'drill') return new Drill(quiz, onDone);
-  return new ChoiceQuiz(quiz, onDone);
+// Stokk svaralternativene og oppdater riktig svar-indeks
+function shuffleOptions(qd) {
+  const order = shuffle(qd.options.map((_, i) => i));
+  const options = order.map((i) => qd.options[i]);
+  return { ...qd, options, answer: order.indexOf(qd.answer) };
+}
+
+export function quizRunner(quiz, onDone, opts = {}) {
+  track('quiz', quiz.id, quiz.title);
+  if (quiz.type === 'drill') return new Drill(quiz, onDone, opts);
+  return new ChoiceQuiz(quiz, onDone, opts);
 }
 
 class BaseQuiz {
-  constructor(quiz, onDone) {
+  constructor(quiz, onDone, opts = {}) {
     this.quiz = quiz;
     this.onDone = onDone;
+    this.opts = opts;
+    this.difficulty = opts.difficulty || 'medium';
     this.index = 0;
     this.score = 0;
     this.questions = [];
@@ -55,16 +87,39 @@ class BaseQuiz {
 
   renderResult() {
     const total = this.questions.length;
-    const pct = Math.round((this.score / total) * 100);
-    const praise = pct === 100 ? 'Perfekt!' : pct >= 80 ? 'Kjempebra!' : pct >= 60 ? 'Godt jobbet!' : 'Øv litt til – du klarer det!';
+    const correct = this.score;
+    const wrong = Math.max(0, total - correct);
+    const pct = total ? Math.round((correct / total) * 100) : 0;
+
+    const praise = pct === 100 ? 'Perfekt! Øver du noe mer, er du umulig å slå.'
+      : pct >= 80 ? 'Kjempebra! Du er godt i gang.'
+      : pct >= 60 ? 'Godt jobbet! Litt til, så sitter det.'
+      : pct >= 40 ? 'Du er på vei. Øv litt til – det hjelper.'
+      : 'God start. Prøv igjen og bygg kunnskapen steg for steg.';
+
+    const metaParts = [DIFFICULTY_LABELS[this.difficulty] || this.difficulty];
+    if (this.quiz.type === 'math' && this.opts.operation) {
+      metaParts.unshift(OPERATION_LABELS[this.opts.operation] || this.opts.operation);
+    }
+    const meta = metaParts.join(' · ');
+
+    const pctColor = pct >= 80 ? 'var(--ok)' : pct >= 50 ? 'var(--accent)' : 'var(--err)';
+
     return h('div', { class: 'card result-card' },
-      h('div', { class: 'result-icon', html: icon(pct === 100 ? 'trophy' : 'target', 40) }),
-      h('div', { class: 'result-score', html: `${this.score}<small> / ${total}</small>` }),
+      h('div', { class: 'result-icon', html: icon(pct === 100 ? 'trophy' : pct >= 60 ? 'target' : 'sparkles', 44) }),
+      h('div', { class: 'result-heading', text: pct === 100 ? 'Alt riktig!' : 'Resultatet ditt' }),
+      h('div', { class: 'result-score', style: { color: pctColor }, html: `${this.score}<small> / ${total}</small>` }),
+      h('div', { class: 'result-pct', html: `${pct} % riktige svar` }),
       h('div', { class: 'result-sub', text: praise }),
-      h('div', { class: 'result-sub', text: `Du svarte riktig på ${pct} % av spørsmålene.` }),
+      h('div', { class: 'result-stats' },
+        h('div', { class: 'rs-item is-good' }, h('div', { class: 'rs-icon', html: icon('check', 16) }), h('div', {}, h('div', { class: 'rs-num', text: String(correct) }), h('div', { class: 'rs-label', text: 'Riktige' }))),
+        h('div', { class: 'rs-item is-bad' }, h('div', { class: 'rs-icon', html: icon('close', 16) }), h('div', {}, h('div', { class: 'rs-num', text: String(wrong) }), h('div', { class: 'rs-label', text: 'Feil' }))),
+        h('div', { class: 'rs-item is-meta' }, h('div', { class: 'rs-icon', html: icon('layers', 16) }), h('div', {}, h('div', { class: 'rs-num', text: meta }), h('div', { class: 'rs-label', text: 'Nivå' }))),
+      ),
       h('div', { class: 'result-actions' },
         h('button', { class: 'btn btn-primary', type: 'button', html: icon('play', 16) + ' Prøv igjen', onclick: () => restart(this) }),
-        h('a', { class: 'btn btn-ghost', href: '#/fag/' + this.quiz.subject, text: 'Til faget' }),
+        h('a', { class: 'btn btn-ghost', href: '#/fag/' + this.quiz.subject, html: icon('book', 16) + ' Faget' }),
+        h('a', { class: 'btn btn-ghost', href: '#/fag/quiz', html: icon('bolt', 16) + ' Andre quizer' }),
       ),
     );
   }
@@ -83,23 +138,60 @@ function restart(instance) {
 
 class ChoiceQuiz extends BaseQuiz {
   build() {
-    if (this.quiz.type === 'flag') {
-      const picked = shuffle(COUNTRIES.filter((c) => c.flagFile && c.population > 0)).slice(0, Math.min(this.quiz.count || 10, 12));
-      this.questions = picked.map((ref) => {
-        const wrong = shuffle(COUNTRIES.filter((c) => c.id !== ref.id && c.flagFile)).slice(0, 3).map((c) => c.name);
-        const options = shuffle([ref.name, ...wrong]);
-        return {
-          q: 'Hvilket land har dette flagget?',
-          flag: ref.flagFile,
-          flagAlt: 'Flagg for ' + ref.name,
-          options,
-          answer: options.indexOf(ref.name),
-          explanation: `${ref.name} – hovedstaden er ${ref.capital || '–'}${ref.population ? `, og landet har ca. ${formatPopulation(ref.population)} innbyggere.` : ''}`,
-        };
-      });
+    const quiz = this.quiz;
+    if (quiz.type === 'flag') {
+      this.questions = this.buildFlagQuestions();
+    } else if (quiz.type === 'math') {
+      this.questions = generateMathQuiz(
+        this.opts.operation || 'mixed',
+        this.difficulty,
+        quiz.count || 10,
+      );
+      this.questions = shuffle(this.questions);
     } else {
-      this.questions = this.quiz.questions.map((qq) => ({ ...qq }));
+      // Valk-spørsmål fra pool
+      const pool = this.poolForDifficulty();
+      const count = Math.min(quiz.count || 10, pool.length);
+      this.questions = shuffle(pool).slice(0, count).map(shuffleOptions);
     }
+  }
+
+  poolForDifficulty() {
+    const d = this.quiz.difficulties || {};
+    if (Array.isArray(d[this.difficulty])) return d[this.difficulty];
+    if (Array.isArray(d.medium)) return d.medium;
+    if (Array.isArray(d.easy)) return d.easy;
+    return this.quiz.questions || [];
+  }
+
+  buildFlagQuestions() {
+    const quiz = this.quiz;
+    const tiers = this.quiz.flagTiers || {
+      easy: { minPopulation: 50e6 },
+      medium: { minPopulation: 12e6 },
+      hard: { minPopulation: 2e6 },
+    };
+    const tier = tiers[this.difficulty] || tiers.medium;
+    const minPop = tier.minPopulation || 2e6;
+    const pool = COUNTRIES.filter((c) => c.flagFile && c.population > 0 && c.population >= minPop);
+    if (!pool.length) return [];
+
+    const minWrong = tier.min || 3;
+    const count = Math.min(quiz.count || 10, pool.length, 12);
+    const picked = shuffle(pool).slice(0, count);
+    return picked.map((ref) => {
+      const distractorPool = shuffle(pool.filter((c) => c.id !== ref.id));
+      const wrong = distractorPool.slice(0, minWrong).map((c) => c.name);
+      const options = shuffle([ref.name, ...wrong]);
+      return {
+        q: 'Hvilket land har dette flagget?',
+        flag: ref.flagFile,
+        flagAlt: 'Flagg for ' + ref.name,
+        options,
+        answer: options.indexOf(ref.name),
+        explanation: `${ref.name} – hovedstaden er ${ref.capital || '–'}${ref.population ? `, og landet har ca. ${formatPopulation(ref.population)} innbyggere.` : ''}`,
+      };
+    });
   }
 
   renderQuestion(qd) {
@@ -128,7 +220,6 @@ class ChoiceQuiz extends BaseQuiz {
   answer(e, i) {
     const qd = this.questions[this.index];
     const btns = qa('.opt-list .opt', this.el);
-    // deaktiver alle svar
     for (const b of btns) {
       b.disabled = true;
       const idx = Number(b.getAttribute('data-i'));
@@ -150,11 +241,15 @@ class ChoiceQuiz extends BaseQuiz {
 
 class Drill extends BaseQuiz {
   build() {
-    const tables = this.quiz.tables || [2, 3, 4, 5];
+    const quiz = this.quiz;
+    const cfg = (quiz.difficulties && quiz.difficulties[this.difficulty]) || {};
+    const tables = cfg.tables || quiz.tables || [2, 3, 4, 5];
+    const bMin = cfg.bMin != null ? cfg.bMin : 1;
+    const bMax = cfg.bMax != null ? cfg.bMax : 10;
     const qs = [];
-    for (let i = 0; i < (this.quiz.count || 10); i++) {
+    for (let i = 0; i < (quiz.count || 10); i++) {
       const a = tables[Math.floor(Math.random() * tables.length)];
-      const b = 1 + Math.floor(Math.random() * 10);
+      const b = bMin + Math.floor(Math.random() * (bMax - bMin + 1));
       qs.push({ a, b, ans: a * b });
     }
     this.questions = qs;
@@ -199,7 +294,6 @@ class Drill extends BaseQuiz {
     const num = Number(val);
 
     let correct = num === qd.ans;
-    // godta "4*3"-stil? nei – kun rene tall
     if (!Number.isFinite(num)) correct = false;
 
     inp.disabled = true;
@@ -221,12 +315,3 @@ class Drill extends BaseQuiz {
 }
 
 function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
-
-function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}

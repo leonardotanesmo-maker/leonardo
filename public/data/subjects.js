@@ -16,6 +16,7 @@ export const SUBJECTS = [
       { kind: 'quiz', id: 'hovedsteder-europa' },
       { kind: 'quiz', id: 'hovedsteder-verden' },
       { kind: 'quiz', id: 'flagg-verden' },
+      { kind: 'quiz', id: 'verdensdeler' },
     ],
     goals: [
       'Kunne plassere land og verdensdeler på kartet',
@@ -31,14 +32,16 @@ export const SUBJECTS = [
     icon: 'math',
     tagline: 'Øv på tall og regning.',
     intro:
-      'Trene på gangetabellen gjør hoderegningen raskere. Øv litt hver dag – det merker du fort.',
+      'Velg regneart og vanskelighetsgrad, og få ferske oppgaver hver gang. Øv litt hver dag – det merker du fort.',
     activities: [
+      { kind: 'quiz', id: 'matematikk' },
       { kind: 'quiz', id: 'gangetabellen' },
     ],
     goals: [
+      'Regne med pluss, minus, ganging og deling',
       'Øve inn gangetabellen fra 2 til 10',
       'Regne raskt og sikkert i hodet',
-      'Forstå sammenhengen mellom gangen og gjentatt addisjon',
+      'Forstå sammenhengen mellom ganging og gjentatt addisjon',
     ],
   },
   {
@@ -48,14 +51,16 @@ export const SUBJECTS = [
     icon: 'book',
     tagline: 'Ord, betydning og rettskriving.',
     intro:
-      'Lek med ordene. Her lærer du om synonymer, antonymer og ord som kan bety flere ting.',
+      'Lek med ordene. Her lærer du om synonymer, antonymer, ordklasser og ord som kan bety flere ting.',
     activities: [
       { kind: 'quiz', id: 'ord-og-betydning' },
+      { kind: 'quiz', id: 'ordklasser' },
+      { kind: 'quiz', id: 'synonymer-antonymer' },
     ],
     goals: [
       'Kunne synonymer og antonymer',
       'Kjenne igjen ord med flere betydninger',
-      'Skille substantiv, verb og andre ordklasser',
+      'Skille substantiv, verb, adjektiv og andre ordklasser',
     ],
   },
   {
@@ -68,9 +73,11 @@ export const SUBJECTS = [
       'Mange engelske ord ligner på norske. Øv på de viktigste grunnordene og bli tryggere på engelsk.',
     activities: [
       { kind: 'quiz', id: 'engelsk-grunnord' },
+      { kind: 'quiz', id: 'engelske-dyr' },
     ],
     goals: [
       'Kunne vanlige engelske hverdagsord',
+      'Kunne dyrenavn på engelsk',
       'Forstå enkle engelske setninger',
       'Bygge vokabular for skole og fritid',
     ],
@@ -82,13 +89,16 @@ export const SUBJECTS = [
     icon: 'sprout',
     tagline: 'Oppdag naturen og verdensrommet.',
     intro:
-      'Fra planter og dyr til planeter og stjerner. Test kunnskapen din om solsystemet og naturen rundt oss.',
+      'Fra planter og dyr til planeter og stjerner. Test kunnskapen din om kroppen, solsystemet og naturen rundt oss.',
     activities: [
       { kind: 'quiz', id: 'planetene' },
+      { kind: 'quiz', id: 'solsystemet' },
+      { kind: 'quiz', id: 'kroppen' },
     ],
     goals: [
       'Kunne planetene i solsystemet',
       'Forstå jordens plass i verdensrommet',
+      'Lære om kroppens organer og hvordan de virker',
       'Se sammenhenger i naturen',
     ],
   },
@@ -99,14 +109,16 @@ export const SUBJECTS = [
     icon: 'landmark',
     tagline: 'Lær om Norge, Europa og verden.',
     intro:
-      'Hvordan henger verden sammen? Lær deg hovedsteder, land og kulturer til høyre og til venstre for Norge.',
+      'Hvordan henger verden sammen? Lær deg hovedsteder, land, fylker og kulturer til høyre og til venstre for Norge.',
     activities: [
+      { kind: 'quiz', id: 'norge-fakta' },
       { kind: 'quiz', id: 'hovedsteder-europa' },
       { kind: 'quiz', id: 'hovedsteder-verden' },
       { kind: 'map', id: 'worldmap', title: 'Verdenskartet', desc: 'Utforsk land og hovedsteder på kartet.' },
     ],
     goals: [
       'Kunne hovedstedene i Europa',
+      'Kjenne til norske fylker, byer og fjell',
       'Kjenne til ulike kulturer og land',
       'Forstå hvor Norge ligger i verden',
     ],
@@ -121,6 +133,7 @@ export const SUBJECTS = [
       'Akkurat som muskelen blir hjernen sterkere av trening. Her får du gåter som får deg til å tenke.',
     activities: [
       { kind: 'quiz', id: 'gater' },
+      { kind: 'quiz', id: 'logiske-gater' },
     ],
     goals: [
       'Trene logisk tenkning',
@@ -140,11 +153,20 @@ export const SUBJECTS = [
       { kind: 'quiz', id: 'hovedsteder-europa' },
       { kind: 'quiz', id: 'hovedsteder-verden' },
       { kind: 'quiz', id: 'flagg-verden' },
+      { kind: 'quiz', id: 'verdensdeler' },
+      { kind: 'quiz', id: 'matematikk' },
       { kind: 'quiz', id: 'gangetabellen' },
       { kind: 'quiz', id: 'planetene' },
+      { kind: 'quiz', id: 'solsystemet' },
+      { kind: 'quiz', id: 'kroppen' },
       { kind: 'quiz', id: 'ord-og-betydning' },
+      { kind: 'quiz', id: 'ordklasser' },
+      { kind: 'quiz', id: 'synonymer-antonymer' },
       { kind: 'quiz', id: 'engelsk-grunnord' },
+      { kind: 'quiz', id: 'engelske-dyr' },
+      { kind: 'quiz', id: 'norge-fakta' },
       { kind: 'quiz', id: 'gater' },
+      { kind: 'quiz', id: 'logiske-gater' },
     ],
     goals: [
       'Teste kunnskapen din i alle fag',
@@ -158,7 +180,7 @@ export const SUBJECT_BY_SLUG = Object.fromEntries(SUBJECTS.map((s) => [s.slug, s
 
 export const POPULAR = [
   { kind: 'map', id: 'worldmap' },
-  { kind: 'quiz', id: 'flagg-verden' },
+  { kind: 'quiz', id: 'matematikk' },
   { kind: 'quiz', id: 'hovedsteder-europa' },
-  { kind: 'quiz', id: 'gangetabellen' },
+  { kind: 'quiz', id: 'flagg-verden' },
 ];

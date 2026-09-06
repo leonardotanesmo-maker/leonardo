@@ -96,7 +96,7 @@ export function renderHome() {
         h('div', { class: 'hero-inner' },
           h('div', {},
             h('span', { class: 'eyebrow', html: icon('sparkles', 13) + ' Norsk læringsverksted for skolen' }),
-            h('h1', { html: 'Lær, tenk og bli bedre' }),
+            h('h1', { html: 'Lær, tenk og <span class="grad-text">bli bedre</span>' }),
             h('p', { class: 'hero-sub', text: 'Leonardo er læringsoppgaver, quizer og gåter for elever og nysgjerrige. Velg et fag, prøv en quiz eller utforsk verdenskartet.' }),
             h('div', { class: 'hero-actions' },
               h('a', { class: 'btn btn-primary btn-lg', href: '#/fag', html: icon('book', 18) + ' Velg fag' }),
