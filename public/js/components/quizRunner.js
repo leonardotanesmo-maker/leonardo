@@ -337,6 +337,31 @@ class Drill extends BaseQuiz {
 
 function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
+// Deler en SVG-pa-banen `d` opp i delene sine (hver M gir én del) og regner
+// ut bbox-en til hver del. Returnerer null hvis stien bruker andre kommandoer
+// enn M/L/Z (da håndteres landet som én hel bbox).
+function splitSubPathBBoxes(d) {
+  if (!d || !/^M/.test(d)) return null;
+  if (!/^[\d.,\-MLZ\s]+$/.test(d)) return null;
+  const segs = d.split('M');
+  const out = [];
+  for (let i = 1; i < segs.length; i++) {
+    const nums = (segs[i].replace(/[LZ]/g, ' ')).match(/-?\d*\.?\d+/g);
+    if (!nums || nums.length < 4) continue;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (let k = 0; k + 1 < nums.length; k += 2) {
+      const x = parseFloat(nums[k]);
+      const y = parseFloat(nums[k + 1]);
+      if (x < x0) x0 = x;
+      if (y < y0) y0 = y;
+      if (x > x1) x1 = x;
+      if (y > y1) y1 = y;
+    }
+    if (x1 >= x0 && y1 >= y0) out.push({ x0, y0, x1, y1 });
+  }
+  return out.length ? out : null;
+}
+
 // «Finn landet på kartet» – typen `map`.
 // Du velger en verdensdel, så skal du klikke på riktig sted for hvert land i den
 // verdensdelen. Landene du finner blir grønne og blir værende grønne. Når alle
@@ -588,11 +613,48 @@ class MapQuiz extends BaseQuiz {
     const svgEl = this.mapStage ? q('svg#world-map', this.mapStage) : null;
     const c = this.current && this.current.c;
     const id = this.current && this.current.id;
-    const bb = id ? MAP_BBOX[id] : null;
-    if (!svgEl || !c || !c.flagFile || !bb) return;
+    if (!svgEl || !c || !c.flagFile) return;
     const pathEl = this.pathByIso[id];
     if (!pathEl || q('.country-flag[data-iso="' + id + '"]', svgEl)) return;
-    const [x0, y0, x1, y1] = bb;
+    // Landets faktiske avgrensning. Delte land (f.eks. Frankrike fastland +
+    // oversjøiske territorier i samme sti) deles i underpunkter, og vi velger
+    // den største synlige delen – ellers ville flagget blitt strukket over hele
+    // bbox-en og bare én stripe blitt synlig.
+    const dAttr = pathEl.getAttribute ? pathEl.getAttribute('d') : null;
+    const subs = dAttr ? splitSubPathBBoxes(dAttr) : null;
+    const svb = svgEl.getAttribute('viewBox');
+    const sv = svb ? svb.split(' ').map(Number) : null;
+    const vx0 = sv && sv[2] > 0 ? sv[0] : -Infinity;
+    const vy0 = sv && sv[3] > 0 ? sv[1] : -Infinity;
+    const vx1 = sv && sv[2] > 0 ? sv[0] + sv[2] : Infinity;
+    const vy1 = sv && sv[3] > 0 ? sv[1] + sv[3] : Infinity;
+    let x0, y0, x1, y1;
+    if (subs && subs.length) {
+      let bestArea = -1;
+      for (const b of subs) {
+        const cx0 = Math.max(b.x0, vx0); const cy0 = Math.max(b.y0, vy0);
+        const cx1 = Math.min(b.x1, vx1); const cy1 = Math.min(b.y1, vy1);
+        if (!(cx1 > cx0) || !(cy1 > cy0)) continue;
+        const area = (cx1 - cx0) * (cy1 - cy0);
+        if (area > bestArea) {
+          bestArea = area;
+          x0 = cx0; y0 = cy0; x1 = cx1; y1 = cy1;
+        }
+      }
+    }
+    if (x0 === undefined) {
+      const live = pathEl.getBBox ? pathEl.getBBox() : null;
+      if (live && live.width > 1 && live.height > 1) {
+        x0 = live.x; y0 = live.y;
+        x1 = live.x + live.width; y1 = live.y + live.height;
+      } else {
+        const bb = MAP_BBOX[id];
+        if (!bb) return;
+        [x0, y0, x1, y1] = bb;
+      }
+      x0 = Math.max(x0, vx0); y0 = Math.max(y0, vy0);
+      x1 = Math.min(x1, vx1); y1 = Math.min(y1, vy1);
+    }
     const w = x1 - x0;
     const h = y1 - y0;
     if (!(w > 0) || !(h > 0)) return;
