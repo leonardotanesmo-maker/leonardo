@@ -8,9 +8,11 @@
 //   - Spørsmålene stokkes i rekkefølge
 //   - Svaralternativer stokkes per spørsmål (riktig svar følger med)
 //   - Hver runde får derfor sjelden samme quiz to ganger
-import { h, q, qa } from '../dom.js';
+import { h, q, qa, clear } from '../dom.js';
 import { icon } from '../icons.js';
 import { COUNTRIES, formatPopulation } from '../../data/countries.js';
+import { countryByNumeric, countryByIso2 } from '../data.js';
+import { loadMapOn } from './map.js';
 import { generateMathQuiz } from '../../data/mathGenerator.js';
 import { track } from '../store.js';
 
@@ -45,6 +47,7 @@ function shuffleOptions(qd) {
 export function quizRunner(quiz, onDone, opts = {}) {
   track('quiz', quiz.id, quiz.title);
   if (quiz.type === 'drill') return new Drill(quiz, onDone, opts);
+  if (quiz.type === 'map') return new MapQuiz(quiz, onDone, opts);
   return new ChoiceQuiz(quiz, onDone, opts);
 }
 
@@ -117,23 +120,26 @@ class BaseQuiz {
         h('div', { class: 'rs-item is-meta' }, h('div', { class: 'rs-icon', html: icon('layers', 16) }), h('div', {}, h('div', { class: 'rs-num', text: meta }), h('div', { class: 'rs-label', text: 'Nivå' }))),
       ),
       h('div', { class: 'result-actions' },
-        h('button', { class: 'btn btn-primary', type: 'button', html: icon('play', 16) + ' Prøv igjen', onclick: () => restart(this) }),
+        h('button', { class: 'btn btn-primary', type: 'button', html: icon('play', 16) + ' Prøv igjen', onclick: () => this.restart() }),
         h('a', { class: 'btn btn-ghost', href: '#/fag/' + this.quiz.subject, html: icon('book', 16) + ' Faget' }),
         h('a', { class: 'btn btn-ghost', href: '#/fag/quiz', html: icon('bolt', 16) + ' Andre quizer' }),
       ),
     );
   }
-}
 
-function restart(instance) {
-  instance.index = 0;
-  instance.score = 0;
-  instance.questions = [];
-  instance.build();
-  const parent = instance.el.parentElement;
-  const el = instance.render();
-  instance.el.replaceWith(el);
-  instance.el = el;
+  // Kalt av siden etter at runnerens element er satt inn i DOM.
+  // Kun typer som trenger noe ekstra (f.eks. å hente kartet) bruker dette.
+  mount() {}
+
+  restart() {
+    this.index = 0;
+    this.score = 0;
+    this.questions = [];
+    this.build();
+    const el = this.render();
+    if (this.el.parentElement) this.el.replaceWith(el);
+    this.el = el;
+  }
 }
 
 class ChoiceQuiz extends BaseQuiz {
@@ -315,3 +321,155 @@ class Drill extends BaseQuiz {
 }
 
 function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+
+// «Finn landet på kartet» – typen `map`.
+// Spilleren får et lands navn og skal klikke på riktig sted på verdenskartet.
+// Verktøytips og landnavn er skrudd av (quiet), så det er formasjonen de gjetter på.
+class MapQuiz extends BaseQuiz {
+  build() {
+    this.ready = false;
+    this.locked = false;
+    this.pathByIso = {};
+    this.continentPool = new Set();
+    const contInfo = (this.quiz.continents || []).find((c) => c.key === this.opts.continent);
+    this.continent = this.opts.continent || 'Europe';
+    this.difficulty = contInfo ? contInfo.label : this.continent;
+  }
+
+  render() {
+    this.topHost = h('div', { class: 'quiz-top' });
+    this.qHost = h('h2', { class: 'quiz-q-text', text: 'Forbereder kartet …' });
+    const hint = h('p', { class: 'quiz-map-hint', text: 'Hold musen over kartet for å se landformene. Klikk på landet du tror er riktig.' });
+    this.mapStage = h('div', { class: 'map-stage map-stage-quiz' },
+      h('div', { class: 'map-loading', html: icon('globe', 22) + ' Laster verdenskartet …' }),
+    );
+    this.fbHost = h('div', { class: 'quiz-feedback', role: 'status' });
+    this.actHost = h('div', { class: 'quiz-actions' });
+    this.qWrap = h('div', { class: 'quiz-q quiz-q-map' },
+      this.qHost,
+      hint,
+      this.mapStage,
+      this.fbHost,
+      this.actHost,
+    );
+    this.shell = h('div', { class: 'quiz-shell quiz-shell-map' }, this.topHost, this.qWrap);
+    return this.shell;
+  }
+
+  async mount() {
+    await loadMapOn(this.mapStage, (id, el) => this.guess(id, el), {
+      quiet: true,
+      ariaLabel: (c) => `${c.name}. Velg dette landet som svar.`,
+    });
+    this.afterMapReady();
+  }
+
+  afterMapReady() {
+    const paths = qa('.country', this.mapStage);
+    this.ready = true;
+    if (!paths.length) {
+      this.qHost.textContent = 'Kunne ikke laste kartet';
+      this.fbHost.classList.add('is-bad');
+      this.fbHost.innerHTML = `<span class="fb-icon">${icon('close', 18)}</span><div class="fb-text"><strong>Noe gikk galt.</strong><div class="explain">Kartet kunne ikke lastes. Last siden på nytt og prøv igjen.</div></div>`;
+      this.actHost.appendChild(h('a', { class: 'btn btn-primary', href: '#/fag/quiz', html: 'Tilbake til quizer' + icon('arrow', 15) }));
+      return;
+    }
+    this.buildPool(paths);
+    this.index = 0;
+    this.renderQuestion();
+  }
+
+  buildPool(paths) {
+    this.pathByIso = {};
+    for (const p of paths) {
+      const c = countryByNumeric(p.getAttribute('data-numeric'));
+      if (c) this.pathByIso[c.id] = p;
+    }
+    const pool = COUNTRIES.filter((c) =>
+      c && c.flagFile && c.population > 0 &&
+      this.pathByIso[c.id] &&
+      this.regionKeyOfCountry(c) === this.continent,
+    );
+    this.continentPool = new Set(pool.map((c) => c.id));
+    for (const id of Object.keys(this.pathByIso)) {
+      const p = this.pathByIso[id];
+      const show = this.continentPool.has(id);
+      p.classList.toggle('is-dim', !show);
+      p.setAttribute('aria-hidden', show ? 'false' : 'true');
+    }
+    const count = Math.min(this.quiz.count || 10, pool.length);
+    this.questions = shuffle(pool).slice(0, count).map((c) => ({ id: c.id, name: c.name, c }));
+  }
+
+  regionKeyOfCountry(c) {
+    const sub = (c.subregion || '').trim();
+    const region = (c.region || '').trim();
+    const cont = (c.continents && c.continents[0]) || '';
+    if (cont === 'Americas' || region === 'Americas') {
+      return sub === 'South America' ? 'South America' : 'North America';
+    }
+    return cont || region || '';
+  }
+
+  renderQuestion() {
+    const qd = this.questions[this.index];
+    if (!qd) { this.goToResult(); return; }
+    this.locked = false;
+    this.shell.classList.remove('is-locked');
+    clear(this.topHost);
+    this.topHost.appendChild(this.renderProgress());
+    this.qHost.textContent = `Hvor ligger ${qd.name}?`;
+    this.fbHost.classList.remove('is-good', 'is-bad');
+    clear(this.fbHost);
+    clear(this.actHost);
+    for (const p of qa('.country', this.mapStage)) {
+      p.classList.remove('is-correct', 'is-wrong', 'is-highlight');
+    }
+  }
+
+  guess(id, el) {
+    if (this.locked || !this.ready || !this.questions.length) return;
+    const qd = this.questions[this.index];
+    const clicked = countryByIso2(id);
+    if (!clicked || !this.continentPool.has(id)) return;
+    this.locked = true;
+    this.shell.classList.add('is-locked');
+    for (const p of qa('.country.is-highlight', this.mapStage)) p.classList.remove('is-highlight');
+    if (id === qd.id) {
+      this.score++;
+      el.classList.add('is-correct');
+      this.fbHost.classList.add('is-good');
+      this.fbHost.innerHTML = `<span class="fb-icon">${icon('check', 18)}</span><div class="fb-text"><strong>Riktig!</strong><div class="explain">${qd.c.name} ligger her.${qd.c.capital ? ' Hovedstaden er ' + qd.c.capital + '.' : ''}</div></div>`;
+    } else {
+      el.classList.add('is-wrong');
+      const correctPath = this.pathByIso[qd.id];
+      if (correctPath) correctPath.classList.add('is-correct');
+      this.fbHost.classList.add('is-bad');
+      this.fbHost.innerHTML = `<span class="fb-icon">${icon('close', 18)}</span><div class="fb-text"><strong>Feil svar.</strong><div class="explain">${qd.c.name} ligger her – du klikket på ${clicked.name}.</div></div>`;
+    }
+    this.actHost.appendChild(h('button', { class: 'btn btn-primary', type: 'button', html: (this.index === this.questions.length - 1 ? 'Se resultat' : 'Neste') + icon('arrow', 15), onclick: () => this.next() }));
+  }
+
+  next() {
+    this.index++;
+    const qd = this.questions[this.index];
+    if (!qd) { this.goToResult(); return; }
+    this.renderQuestion();
+  }
+
+  goToResult() {
+    const res = this.renderResult();
+    if (this.el.parentElement) this.el.replaceWith(res);
+    this.el = res;
+  }
+
+  restart() {
+    this.score = 0;
+    this.index = 0;
+    this.buildPool(qa('.country', this.mapStage));
+    if (this.el.parentElement) this.el.replaceWith(this.shell);
+    this.el = this.shell;
+    this.renderQuestion();
+    if (this.el.scrollIntoView) this.el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}

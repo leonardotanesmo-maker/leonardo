@@ -1,6 +1,6 @@
 # JARVIS_STATE.md – Leonardo (nettlæringsverksted, tidligere "Gruble.net")
 
-Oppdatert: 6. september 2026 (6. økt – mye flere quizer, vanskelighetsgrader, mattesystem og randomisering). Skrevet av JARVIS for neste AI-økt og for menneskelige utviklere.
+Oppdatert: 6. september 2026 (7. økt – ny kart-quiz «Finn landet på kartet», kodet av JARVIS). Skrevet av JARVIS for neste AI-økt og for menneskelige utviklere.
 
 ## Prosjekt
 Nettutgave av et norsk læringsverksted – fag, quizer, gåter og interaktivt verdenskart – bygget helt
@@ -89,12 +89,27 @@ headless Chrome (CDP). Ingen runtime-feil (0 unntak) på noen rute. Fikset i den
    - Fiks underveis: `kanِikke`-citeringsbug i `synonymer-antonymer` (syntaks), duplikate
      alternativer i `engelske-dyr` («bees») og `ordklasser` («Adjektiv»), og quiz-siden startet
      matte direkte i stedet for å vise oppsettskjermen (rettet – alltid oppsett først).
+10. **Ny kart-quiz «Finn landet på kartet» (7. økt).** Quiz `finn-pa-kartet` (`type: 'map'`, faget
+    geografi) – spilleren velger verdensdel (6 kort i oppsettet), får et lands navn og klikker landet
+    på verdenskartet. Kun formen som hint: valgt verdensdels land er fargeklare, resten er dempet
+    28 % opasitet og ikke-klikkbare, verktøytips er skrudd av (`loadMapOn(..., { quiet: true })`),
+    hover = blå markering. Klikk: riktig → grønt + poeng, feil → rødt + riktig land grønt.
+    Låser kartet, «Neste»/«Se resultat»-knapp, deretter vanlig resultatkort («Prøv igjen» bygger ny
+    randomisert runde – pool bygges på nytt, kartet beholdes). America-regioner deles via subregion.
+    Nye `MapQuiz`-klasse i `quizRunner.js` + `quiz.js` oppsettssteg «Velg verdensdel» + CSS i
+    `map.css`/`components.css`. Legges inn som aktivitet i geografi- og quiz-faget + Popular.
+    - **Verifisering:** logikk-tester utvidet i `quiz_test.mjs` (alle 6 kontinentpooler ikke-tomme,
+      riktig region for Brasil/Canada/Egypt/Australia, dim-set == aria-hidden-set). Ny CDP-klikk-
+      test `cdp_drive.mjs` (Node 26 WebSocket → Chrome DevTools Protocol): velg Europa → spørsmål
+      vises, kart med 177 land, ingen tooltip-element, klikk gir feedback + lås, «Neste» til Q2,
+      full runde til resultatkort, «Prøv igjen» → spillt. 0 konsollfeil. Oseania = 7 spørsmål
+      (kun 7 land med flagg+befolkning på kartet).
 
 ## Kjør rutenettet
 Ruter (hash-router):
 `#/` og `#/hjem` – forside · `#/fag` – alle fag · `#/fag/:slug` – enkeltfag ·
 `#/geografi` – interaktivt verdenskart · `#/geografi/:iso2` – dyplenke til landpanel ·
-`#/quiz` og `#/quiz/:id` – quizer (valg, flagg, drill) · `#/sok` – søkeside · `#/om` – om siden.
+`#/quiz` og `#/quiz/:id` – quizer (valg, flagg, drill, kart) · `#/sok` – søkeside · `#/om` – om siden.
 
 ## Struktur (public/)
 - `index.html` – skjellett, laster `js/main.js`
@@ -106,7 +121,8 @@ Ruter (hash-router):
 - `js/components.js` – delekomponenter (`pageHead`, `crumbs`, `activityCard` osv.)
 - `js/store.js` – localStorage-basert "siste aktivitet"
 - `js/components/` – `header.js` (søkedropdown + mobilmeny), `footer.js`, `map.js`
-  (kartladning, hover-tooltip, dimming/søk), `quizRunner.js` (valg-/flagg-/drill-quiz),
+  (kartladning, hover-tooltip, dimming/søk – støtter `opts.quiet` for quiz uten navnetips),
+  `quizRunner.js` (valg-/flagg-/drill-/math-/kart-quiz inkl. `MapQuiz`),
   `countryPanel.js` (landpanel)
 - `js/pages/` – `home`, `subjects`, `subject`, `geography`, `quiz`, `search`, `about`, `notfound`
 - `js/data.js` – indeksert landdata, fag, quizer; `search()`
@@ -166,6 +182,14 @@ Interaktivt CDP-testsett i `/tmp/grublebuild/` mot CDP på port 9222 (chromium h
    `options[answer]` er uforandret). Spørsmålsrommet per nivå er godt utvidet, så gjentatte
    runder gir reelt nye spørsmål. Neste mulige steg: per-spørsmål-gjennomgang på resultatkortet,
    beste-poeng-per-quiz i localStorage, og en quiz-let «velg tilfeldig spørsmål»-modus.
+6. (7. økt) Ny kart-quiz **`finn-pa-kartet`** (`type: 'map'`): spilleren velger verdensdel, får et
+   lands navn og må klikke riktig sted på verdenskartet – kun formasjonen som ledetråd.
+   `map.js`' `loadMapOn(stage, onSelect, opts)` har nå `opts.quiet` som skrur av navne-verktøytips
+   (hover = bare blå markering) og `opts.ariaLabel`. `MapQuiz` i `quizRunner.js` dimmer land utenfor
+   valgt verdensdel, markerer riktig/feil i grønt/rødt, og «Prøv igjen» fra resultatkortet bygger en
+   ny randomisert runde på eksisterende kart. Nord-/Sør-Amerika deles via `subregion`
+   (`regionKeyOfCountry`); alle 6 kontinenter har ikke-tomme pooler (Oseania kun 7 land på kartet).
+   Lett å utvide videre: nye kartquizvarianter (f.eks. «klikk hovedstaden», større-på-kartet).
 
 ## Viktige fallgruver (headless-testing)
 - Ikke bruk `pkill -f <pattern>` som matcher egen kommandolinje – den dreper skallet.

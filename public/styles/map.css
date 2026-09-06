@@ -42,6 +42,43 @@
   filter: drop-shadow(0 0 4px rgba(58, 91, 217, 0.6));
 }
 
+/* ——— «Finn landet på kartet» (map-quiz) ——— */
+.quiz-shell-map { max-width: 920px; }
+.quiz-q-map { padding: var(--sp-4) 0; }
+.quiz-map-hint {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  margin: 0 0 var(--sp-4);
+  text-align: center;
+}
+.map-stage-quiz {
+  border-radius: var(--r-l);
+  overflow: hidden;
+}
+.map-stage-quiz .map-loading { min-height: 320px; }
+
+#world-map .country.is-dim { pointer-events: none; }
+#world-map .country.is-correct {
+  fill: var(--ok);
+  stroke: #ffffff;
+  stroke-width: 1.2;
+}
+#world-map .country.is-wrong {
+  fill: var(--err);
+  stroke: #ffffff;
+  stroke-width: 1.2;
+}
+.quiz-shell-map.is-locked #world-map .country:hover { fill: var(--land); }
+.quiz-shell-map.is-locked #world-map .country.is-correct,
+.quiz-shell-map.is-locked #world-map .country.is-wrong {
+  cursor: default;
+  pointer-events: none;
+}
+
+@media (max-width: 560px) {
+  .quiz-shell-map { max-width: 100%; }
+}
+
 .map-loading {
   display: flex;
   align-items: center;

@@ -13,6 +13,7 @@ export const SUBJECTS = [
       'Utforsk verdenskartet, klikk på land og lær deg hovedsteder, befolkning, flagg og verdensdeler. Her blir kartet ditt verktøy.',
     activities: [
       { kind: 'map', id: 'worldmap', title: 'Verdenskartet', desc: 'Klikk på et land for å lære mer om det.' },
+      { kind: 'quiz', id: 'finn-pa-kartet' },
       { kind: 'quiz', id: 'hovedsteder-europa' },
       { kind: 'quiz', id: 'hovedsteder-verden' },
       { kind: 'quiz', id: 'flagg-verden' },
@@ -22,6 +23,7 @@ export const SUBJECTS = [
       'Kunne plassere land og verdensdeler på kartet',
       'Kunne hovedstedene til de viktigste landene',
       'Kjenne igjen flagg fra hele verden',
+      'Kjenne igjen landformene og finne land på kartet',
       'Forstå forskjellen på kontinent og land',
     ],
   },
@@ -150,6 +152,7 @@ export const SUBJECTS = [
     intro:
       'Samling av alle quizer og øvelser på Leonardo. Finn en du vil prøve, eller ta alle sammen.',
     activities: [
+      { kind: 'quiz', id: 'finn-pa-kartet' },
       { kind: 'quiz', id: 'hovedsteder-europa' },
       { kind: 'quiz', id: 'hovedsteder-verden' },
       { kind: 'quiz', id: 'flagg-verden' },
@@ -181,6 +184,6 @@ export const SUBJECT_BY_SLUG = Object.fromEntries(SUBJECTS.map((s) => [s.slug, s
 export const POPULAR = [
   { kind: 'map', id: 'worldmap' },
   { kind: 'quiz', id: 'matematikk' },
-  { kind: 'quiz', id: 'hovedsteder-europa' },
+  { kind: 'quiz', id: 'finn-pa-kartet' },
   { kind: 'quiz', id: 'flagg-verden' },
 ];

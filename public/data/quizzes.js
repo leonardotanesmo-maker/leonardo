@@ -7,6 +7,7 @@
 //   flag   – "hvilket land har dette flagget?", genereres fra landdata
 //   drill  – innskrivingsoppgave (gangetabellen)
 //   math   – matematikk med valg av operasjon + vanskelighetsgrad (dynamisk)
+//   map    – "finn landet på kartet", klikk riktig sted på verdenskartet
 //
 // Vanskelighetsgrader: `difficulties` er en nøkkel med pooler for
 // easy/medium/hard. Legger du til spørsmål, legg dem i riktig pool.
@@ -223,6 +224,23 @@ export const QUIZZES = [
         qq('Belize ligger i hvilken verdensdel?', ['Nord-Amerika', 'Sør-Amerika', 'Europa', 'Asia'], 0, 'Belize ligger i Mellom-Amerika (Nord-Amerika).'),
       ],
     },
+  },
+  {
+    id: 'finn-pa-kartet',
+    subject: 'geografi',
+    title: 'Finn landet på kartet',
+    description: 'Du får et lands navn og skal klikke riktig sted på verdenskartet. Ingen ledetråder – kjenn igjen landet på landet selv.',
+    icon: 'globe',
+    type: 'map',
+    count: 8,
+    continents: [
+      { key: 'Europe', label: 'Europa' },
+      { key: 'Africa', label: 'Afrika' },
+      { key: 'Asia', label: 'Asia' },
+      { key: 'North America', label: 'Nord-Amerika' },
+      { key: 'South America', label: 'Sør-Amerika' },
+      { key: 'Oceania', label: 'Oseania' },
+    ],
   },
 
   // ============ MATEMATIKK ============

@@ -19,8 +19,21 @@ const OPERATIONS = [
   { key: 'mixed', label: 'Blandet', icon: 'layers', sym: '±', desc: 'Alle regnearter blandes', color: 'var(--c-engelsk)' },
 ];
 
+const CONTINENT_COLORS = {
+  Europe: 'var(--c-geografi)',
+  Africa: 'var(--c-naturfag)',
+  Asia: 'var(--c-matematikk)',
+  'North America': 'var(--c-hjernetrim)',
+  'South America': 'var(--c-norsk)',
+  Oceania: 'var(--c-engelsk)',
+};
+
 function quizIsMath(quiz) {
   return quiz.type === 'math';
+}
+
+function quizIsMap(quiz) {
+  return quiz.type === 'map';
 }
 
 export function renderQuiz({ params }) {
@@ -65,12 +78,27 @@ export function renderQuiz({ params }) {
     stage.innerHTML = '';
     const runner = quizRunner(quiz, () => {}, config);
     stage.appendChild(runner.el);
+    if (typeof runner.mount === 'function') runner.mount();
   }
 
   function renderSetup() {
     stage.innerHTML = '';
     if (quiz.type === 'math') renderOperationStep();
+    else if (quiz.type === 'map') renderContinentStep();
     else renderDifficultyStep();
+  }
+
+  function renderContinentStep() {
+    const conts = quiz.continents || [];
+    const cards = h('div', { class: 'setup-grid', style: 'grid-template-columns:repeat(3,minmax(0,1fr))' }, ...conts.map((c) =>
+      h('button', { class: 'setup-card math-op-card', type: 'button', style: { '--op-color': CONTINENT_COLORS[c.key] || 'var(--accent)' }, onclick: () => startQuiz({ continent: c.key }) },
+        h('span', { class: 'setup-icon', html: icon('globe', 26) }),
+        h('span', { class: 'setup-label', text: c.label }),
+        h('span', { class: 'setup-desc', text: 'Klikk på riktig sted på kartet' }),
+      ),
+    ));
+
+    renderSetupShell('Velg verdensdel', 'Hvilke land skal du finne på verdenskartet? Formene er den eneste ledetråden.', cards);
   }
 
   function renderOperationStep() {

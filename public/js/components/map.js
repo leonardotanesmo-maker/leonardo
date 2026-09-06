@@ -21,7 +21,11 @@ export function mapElement() {
   );
 }
 
-export async function loadMapOn(stage, onSelect) {
+// opts:
+//   quiet: true  – viser ingen navne-verktøytips (brukes av «Finn landet på kartet»,
+//                  der navnet på hover ville være en ledetråd)
+//   ariaLabel: (c) => string – egen aria-label per land
+export async function loadMapOn(stage, onSelect, opts = {}) {
   onSelectCb = onSelect;
   coarse = isCoarsePointer();
   try {
@@ -31,17 +35,20 @@ export async function loadMapOn(stage, onSelect) {
     stage.innerHTML = text;
     svg = q('svg#world-map', stage);
     tooltip = q('.map-tooltip', stage);
-    if (!tooltip) {
+    if (!tooltip && !opts.quiet) {
       tooltip = h('div', { class: 'map-tooltip', role: 'tooltip' });
       stage.appendChild(tooltip);
+    } else if (tooltip && opts.quiet) {
+      tooltip.remove();
+      tooltip = null;
     }
-    bind();
+    bind(opts);
   } catch (err) {
     stage.innerHTML = `<p class="map-loading" role="alert">Kunne ikke laste kartet (${err.message}). Last siden på nytt og prøv igjen.</p>`;
   }
 }
 
-function bind() {
+function bind(opts = {}) {
   const countries = qa('.country', svg);
   for (const p of countries) {
     p.setAttribute('tabindex', '0');
@@ -53,7 +60,8 @@ function bind() {
     p.addEventListener('keydown', onKey);
     const c = countryByNumeric(p.getAttribute('data-numeric'));
     if (c) {
-      p.setAttribute('aria-label', `${c.name}. Vis informasjon om landet. Enter eller mellomrom for å åpne.`);
+      const label = opts.ariaLabel ? opts.ariaLabel(c) : `${c.name}. Vis informasjon om landet. Enter eller mellomrom for å åpne.`;
+      p.setAttribute('aria-label', label);
     }
   }
   svg.addEventListener('touchstart', () => { coarse = true; }, { passive: true });
