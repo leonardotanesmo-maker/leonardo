@@ -2,9 +2,10 @@
 import { h } from '../dom.js';
 import { icon } from '../icons.js';
 import { crumbs } from '../components.js';
-import { QUIZ_BY_ID } from '../../data/quizzes.js';
+import { QUIZ_BY_ID, questionCount } from '../../data/quizzes.js';
 import { SUBJECT_BY_SLUG } from '../../data/subjects.js';
 import { quizRunner, loadHeavyQuizMods, DIFFICULTY_LABELS } from '../components/quizRunner.js';
+import { bestFor } from '../progress.js';
 
 const DIFFICULTIES = [
   { key: 'easy', icon: 'sparkles', desc: 'Enkle spørsmål som bygger grunnmuren.' },
@@ -31,6 +32,21 @@ const CONTINENT_COLORS = {
 
 function quizIsMath(quiz) {
   return quiz.type === 'math';
+}
+
+// Personlig rekord for en bestemt oppsett-kombinasjon (delt format med
+// quizRunner: leonardo:pb:<scope>). Viser eleven motivasjon på oppsettet.
+function pbChip(scope) {
+  const pb = bestFor(scope);
+  return pb > 0 ? h('span', { class: 'setup-pb', html: icon('trophy', 12) + ' Din rekord: ' + pb + ' %' }) : null;
+}
+
+// Hvor mange spørsmål en runde gir på det valgte nivået.
+function roundSizeFor(quiz, level) {
+  if (quiz.type === 'math' || quiz.type === 'drill') return quiz.count || 10;
+  const d = quiz.difficulties || {};
+  if (Array.isArray(d[level])) return d[level].length;
+  return questionCount(quiz);
 }
 
 function quizIsMap(quiz) {
@@ -76,6 +92,12 @@ export function renderQuiz({ params }) {
 
   async function startQuiz(config) {
     if (quiz.type === 'flag' || quiz.type === 'map') {
+      setupHost.innerHTML = '';
+      setupHost.appendChild(h('div', { class: 'setup-shell card is-loading' },
+        h('div', { class: 'skeleton-row', style: 'width:60%' }),
+        h('div', { class: 'skeleton-row', style: 'width:40%' }),
+        h('div', { class: 'skeleton-row' }),
+      ));
       await loadHeavyQuizMods();
     }
     setupHost.innerHTML = '';
@@ -99,6 +121,7 @@ export function renderQuiz({ params }) {
         h('span', { class: 'setup-icon', html: icon('globe', 26) }),
         h('span', { class: 'setup-label', text: c.label }),
         h('span', { class: 'setup-desc', text: 'Finn alle landene – hele verdensdelen blir grønn' }),
+        pbChip(quiz.id + ':' + c.key),
       ),
     ));
 
@@ -121,13 +144,19 @@ export function renderQuiz({ params }) {
   }
 
   function renderDifficultyStep(operation) {
-    const cards = h('div', { class: 'setup-grid', style: 'grid-template-columns:repeat(3,minmax(0,1fr))' }, ...DIFFICULTIES.map((d) =>
-      h('button', { class: 'setup-card diff-card diff-' + d.key, type: 'button', onclick: () => startQuiz({ difficulty: d.key, operation: operation }) },
+    const cards = h('div', { class: 'setup-grid', style: 'grid-template-columns:repeat(3,minmax(0,1fr))' }, ...DIFFICULTIES.map((d) => {
+      const scope = quiz.type === 'math' ? quiz.id + ':' + (operation || 'mixed') : quiz.id;
+      const roundSize = quiz.type === 'flag' || quiz.type === 'map'
+        ? null
+        : roundSizeFor(quiz, d.key);
+      return h('button', { class: 'setup-card diff-card diff-' + d.key, type: 'button', onclick: () => startQuiz({ difficulty: d.key, operation: operation }) },
         h('span', { class: 'setup-icon', html: icon(d.icon, 26) }),
         h('span', { class: 'setup-label', text: DIFFICULTY_LABELS[d.key] }),
+        roundSize ? h('span', { class: 'setup-count', html: icon('list', 13) + ' ' + roundSize + ' spørsmål' }) : null,
         h('span', { class: 'setup-desc', text: d.desc }),
-      ),
-    ));
+        pbChip(scope),
+      );
+    }));
 
     const titleText = quiz.type === 'math'
       ? '2 · Velg vanskelighetsgrad'
@@ -143,7 +172,7 @@ export function renderQuiz({ params }) {
         h('h2', { text: title }),
         h('p', { text: desc }),
         onBack
-          ? h('button', { class: 'btn btn-ghost btn-sm', type: 'button', html: icon('arrow', 14) + ' Tilbake', onclick: onBack })
+          ? h('button', { class: 'btn btn-ghost btn-sm', type: 'button', html: icon('arrowLeft', 14) + ' Tilbake', onclick: onBack })
           : null,
       ),
       content,

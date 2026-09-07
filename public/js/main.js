@@ -1,9 +1,10 @@
 // Leonardo – inngangspunkt
 // Ruter lastes inn "lat" (bare når siden trengs), så forsiden starter med et
 // minimum av kode. De tunge land- og quizdataene kommer først på side 2+.
-import { register, start } from './router.js';
+import { register, start, setOnRender } from './router.js';
 import { mountHeader } from './components/header.js';
 import { mountFooter } from './components/footer.js';
+import { initAnalytics, onRouteChanged } from './analytics/index.js';
 
 function lazy(path, fn) {
   return async (ctx) => {
@@ -24,11 +25,20 @@ register('/sok', lazy('./pages/search.js', 'renderSearch'));
 register('/om', lazy('./pages/about.js', 'renderAbout'));
 register('/duell', lazy('./pages/duel.js', 'renderDuel'));
 register('/duell/:kode', lazy('./pages/duel.js', 'renderDuel'));
+// Internt analyse-/logg-dashbord. Lenkes ikke i navigasjonen; åpnes på
+// #/admin. Se JARVIS_STATE.md (## LIVE LOG / ANALYTICS SYSTEM).
+register('/admin', lazy('./pages/admin.js', 'renderAdmin'));
 
 const headerHost = document.getElementById('app-header');
 const footerHost = document.getElementById('app-footer');
 mountHeader(headerHost);
 mountFooter(footerHost);
+
+// Spor sidevisninger (PAGE_VIEW) når ruteren har tegnet en side.
+// Selve initAnalytics() finner backend (server.js-i /api) eller havner i
+// LOKAL-modus – se public/js/analytics/.
+setOnRender(onRouteChanged);
+initAnalytics();
 
 start();
 

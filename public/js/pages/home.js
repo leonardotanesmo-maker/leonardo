@@ -1,11 +1,52 @@
 // Leonardo – forsiden
 import { h, clear } from '../dom.js';
 import { icon } from '../icons.js';
-import { subjectCards, sectionHead, activityCard } from '../components.js';
+import { subjectCards, sectionHead, activityCard, SUBJECT_ICON_COLORS } from '../components.js';
 import { SUBJECTS, POPULAR } from '../../data/subjects.js';
 import { getRecent } from '../store.js';
+import { progressSummary } from '../progress.js';
 
-function heroVisual() {
+function progressSection() {
+  const s = progressSummary();
+  if (!s) return null;
+
+  const stat = (num, label, iconName) =>
+    h('div', { class: 'prog-stat' },
+      h('div', { class: 'prog-stat-icon', html: icon(iconName, 16) }),
+      h('div', { class: 'prog-stat-num', text: String(num) }),
+      h('div', { class: 'prog-stat-label', text: label }),
+    );
+
+  const bar = (a) => {
+    const color = SUBJECT_ICON_COLORS[a.subjectSlug] || '#3a5bd9';
+    return h('div', { class: 'prog-bar-row', style: { '--prog-accent': color } },
+      h('div', { class: 'prog-bar-head' },
+        h('span', { class: 'prog-bar-title', text: a.title }),
+        h('span', { class: 'prog-bar-pct', text: a.pct + ' %' }),
+      ),
+      h('div', { class: 'prog-bar' }, h('span', { class: 'prog-bar-fill', style: { width: a.pct + '%' } })),
+    );
+  };
+
+  const top = (s.bestItems || []).slice(0, 4);
+
+  return h('div', { class: 'section' },
+    sectionHead('Din fremgang', 'All øving lagres trygt på akkurat denne enheten', null),
+    h('div', { class: 'card progress-panel' },
+      h('div', { class: 'prog-stats' },
+        stat(s.played, 'Fullførte øvelser', 'layers'),
+        stat(s.subjects, 'Fag du har øvd i', 'book'),
+        stat(s.best + ' %', 'Beste resultat', 'trophy'),
+        stat(s.avg + ' %', 'Gjennomsnitt', 'trend'),
+      ),
+      top.length
+        ? h('div', { class: 'prog-bars' }, h('div', { class: 'prog-bars-title', text: 'Dine beste øvelser' }), ...top.map(bar))
+        : h('p', { class: 'prog-empty', text: 'Fullfør en quiz, så samler vi opp dine beste resultater her.' }),
+    ),
+  );
+}
+
+const heroVisual = () => {
   return h('div', { class: 'hero-mini-map', 'aria-hidden': 'true' },
     h('svg', { viewBox: '0 0 480 300', role: 'presentation' },
       h('defs', { html: `<linearGradient id="hm-ocean" x1="0" y1="0" x2="1" y2="1">
@@ -55,7 +96,14 @@ export function renderHome() {
 
   // Disse fylles i mount(), etter at de tunge land-/quizdataene har lastet.
   // Da maler forsiden seg nesten med en gang, og skolen får raskere side.
-  const popularHost = h('div', { class: 'activity-list is-loading' });
+  const skelCard = () => h('div', { class: 'skel-card', 'aria-hidden': 'true' },
+    h('div', { class: 'skel-avatar', html: '' }),
+    h('div', { class: 'skel-lines' },
+      h('div', { class: 'skel-bar', style: 'width:68%' }),
+      h('div', { class: 'skel-bar', style: 'width:42%' }),
+    ),
+  );
+  const popularHost = h('div', { class: 'activity-list is-loading', 'aria-busy': 'true' }, skelCard(), skelCard(), skelCard());
   const recentHost = h('div', { class: 'activity-list' });
 
   const recentActivity = recent.length
@@ -107,6 +155,8 @@ export function renderHome() {
       ),
 
       recentActivity,
+
+      progressSection(),
 
       h('div', { class: 'section' },
         sectionHead('Slik fungerer det', 'Tre enkle steg', null),

@@ -62,7 +62,12 @@ function normalize(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.,'’"()]/g, '').trim();
 }
 
+// Indeksen bygges én gang og gjenbrukes: kildedataene er statiske, så å bygge
+// den om for hvert tastetrykk i søket kostet tid med ~200 land.
+let searchIndexCache = null;
+
 export function buildSearchIndex() {
+  if (searchIndexCache) return searchIndexCache;
   const items = [];
   for (const s of SUBJECTS) {
     items.push({ kind: 'subject', id: s.slug, name: s.name, sub: 'Fag', icon: s.icon, accent: s.accent, tokens: normalize(`${s.name} ${s.tagline} ${s.intro}`) });
@@ -74,6 +79,7 @@ export function buildSearchIndex() {
   for (const c of COUNTRIES) {
     items.push({ kind: 'country', id: c.id, name: c.name, sub: `Land · ${continentLabelOf(c)}`, icon: 'pin', accent: 'geografi', flag: c.flagFile, tokens: normalize(`${c.name} ${c.official} ${c.capital} ${normalize(c.search)}`) });
   }
+  searchIndexCache = items;
   return items;
 }
 

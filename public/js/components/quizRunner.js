@@ -13,6 +13,9 @@ import { icon } from '../icons.js';
 import { MAP_BBOX } from '../../data/mapBBox.js';
 import { generateMathQuiz } from '../../data/mathGenerator.js';
 import { track } from '../store.js';
+import { trackEvent, EVENT_NAMES } from '../analytics/index.js';
+import { play } from '../audio.js';
+import { bestFor, recordAttempt } from '../progress.js';
 
 // Landmoduler (COUNTRIES m/ flagg, kart-hjelpere og kart-reactoren) lastes bare
 // når en quiz faktisk trenger dem – altså flagg- og kartoppgaver. Tekst- og
@@ -91,12 +94,56 @@ class BaseQuiz {
     this.difficulty = opts.difficulty || 'medium';
     this.index = 0;
     this.score = 0;
+    this.answerLog = [];
     this.questions = [];
     this.build();
+    this.reportStart();
     this.el = this.render();
   }
 
   build() { throw new Error('build() må overstyres'); }
+
+  isMathKind() {
+    return this.quiz.type === 'math' || this.quiz.type === 'drill';
+  }
+
+  // Hendelsesdata felles for alle quiztyper.
+  baseData() {
+    const qz = this.quiz;
+    const data = {
+      quizId: qz.id,
+      quizTitle: qz.title,
+      subjectSlug: qz.subject,
+      difficulty: this.difficulty,
+    };
+    if (this.opts.operation) data.operation = this.opts.operation;
+    return data;
+  }
+
+  reportStart() {
+    const name = this.isMathKind() ? EVENT_NAMES.MATH_STARTED : EVENT_NAMES.QUIZ_STARTED;
+    trackEvent(name, this.baseData());
+  }
+
+  reportQuestion(correct) {
+    const name = this.isMathKind() ? EVENT_NAMES.MATH_QUESTION_ANSWERED : EVENT_NAMES.QUIZ_QUESTION_ANSWERED;
+    trackEvent(name, {
+      ...this.baseData(),
+      correct,
+      index: this.index,
+      score: this.score,
+      total: this.questions.length,
+    });
+  }
+
+  reportDone() {
+    const name = this.isMathKind() ? EVENT_NAMES.MATH_COMPLETED : EVENT_NAMES.QUIZ_COMPLETED;
+    trackEvent(name, {
+      ...this.baseData(),
+      score: this.score,
+      total: this.questions.length,
+    });
+  }
 
   render() {
     const qd = this.questions[this.index];
@@ -120,11 +167,56 @@ class BaseQuiz {
     );
   }
 
+  // Key for personlig rekord: unik per quiz (og per regneart/verdensdel).
+  pbScope() {
+    const qz = this.quiz;
+    if (qz.type === 'math') return qz.id + ':' + (this.opts.operation || 'mixed');
+    if (qz.type === 'map') return qz.id + ':' + (this.opts.continent || '');
+    return qz.id;
+  }
+
+  bestResult() {
+    return bestFor(this.pbScope());
+  }
+
+  recordResult(pct, roundStats = {}) {
+    return recordAttempt(this.quiz, this.opts, { pct, correct: this.score, total: this.questions && this.questions.length, ...roundStats });
+  }
+
+  // Gjennomgang etter runden – lar eleven se riktige og gale svar med forklaring.
+  renderReview() {
+    if (!this.answerLog.length) return null;
+    const rows = this.answerLog.map((a) => {
+      const chosen = a.correct ? null : h('div', { class: 'rev-chosen', text: 'Du svarte: ' + (a.chosen === '' ? '(ingen) ' : String(a.chosen)) });
+      const right = a.answerText ? h('div', { class: 'rev-right', text: 'Riktig svar: ' + String(a.answerText) }) : null;
+      return h('div', { class: 'rev-item' + (a.correct ? ' is-good' : ' is-bad') },
+        h('span', { class: 'rev-mark', 'aria-hidden': 'true', html: icon(a.correct ? 'check' : 'close', 15) }),
+        h('div', { class: 'rev-body' },
+          h('div', { class: 'rev-q', text: String(a.q) }),
+          chosen,
+          right,
+          a.explanation ? h('div', { class: 'rev-exp', text: String(a.explanation) }) : null,
+        ),
+      );
+    });
+    return h('details', { class: 'quiz-review' },
+      h('summary', {},
+        h('span', { 'aria-hidden': 'true', style: 'display:inline-flex;vertical-align:-2px;margin-right:6px', html: icon('list', 16) }),
+        'Se gjennom svarene dine (' + String(this.answerLog.length) + ')',
+      ),
+      h('div', { class: 'rev-list' }, ...rows),
+    );
+  }
+
   renderResult() {
     const total = this.questions.length;
     const correct = this.score;
     const wrong = Math.max(0, total - correct);
     const pct = total ? Math.round((correct / total) * 100) : 0;
+    this.reportDone();
+    const prevBest = this.bestResult();
+    const isNewBest = this.recordResult(pct, { correct, total });
+    if (pct === 100) play('win'); else play('done');
 
     const praise = pct === 100 ? 'Perfekt! Øver du noe mer, er du umulig å slå.'
       : pct >= 80 ? 'Kjempebra! Du er godt i gang.'
@@ -146,6 +238,9 @@ class BaseQuiz {
       h('div', { class: 'result-score', style: { color: pctColor }, html: `${this.score}<small> / ${total}</small>` }),
       h('div', { class: 'result-pct', html: `${pct} % riktige svar` }),
       h('div', { class: 'result-sub', text: praise }),
+      isNewBest ? h('div', { class: 'result-badge is-new', html: icon('sparkles', 14) + ' Ny personlig rekord!' })
+        : prevBest > 0 ? h('div', { class: 'result-badge is-pb', html: icon('trophy', 14) + ' Personlig rekord: ' + prevBest + ' %' })
+        : null,
       h('div', { class: 'result-stats' },
         h('div', { class: 'rs-item is-good' }, h('div', { class: 'rs-icon', html: icon('check', 16) }), h('div', {}, h('div', { class: 'rs-num', text: String(correct) }), h('div', { class: 'rs-label', text: 'Riktige' }))),
         h('div', { class: 'rs-item is-bad' }, h('div', { class: 'rs-icon', html: icon('close', 16) }), h('div', {}, h('div', { class: 'rs-num', text: String(wrong) }), h('div', { class: 'rs-label', text: 'Feil' }))),
@@ -156,6 +251,7 @@ class BaseQuiz {
         h('a', { class: 'btn btn-ghost', href: '#/fag/' + this.quiz.subject, html: icon('book', 16) + ' Faget' }),
         h('a', { class: 'btn btn-ghost', href: '#/fag/quiz', html: icon('bolt', 16) + ' Andre quizer' }),
       ),
+      this.renderReview(),
     );
   }
 
@@ -166,8 +262,10 @@ class BaseQuiz {
   restart() {
     this.index = 0;
     this.score = 0;
+    this.answerLog = [];
     this.questions = [];
     this.build();
+    this.reportStart();
     const el = this.render();
     if (this.el.parentElement) this.el.replaceWith(el);
     this.el = el;
@@ -269,6 +367,9 @@ class ChoiceQuiz extends BaseQuiz {
     }
     const correct = i === qd.answer;
     if (correct) this.score++;
+    this.answerLog.push({ q: qd.q, chosen: qd.options[i], answerText: qd.options[qd.answer], correct, explanation: qd.explanation });
+    play(correct ? 'correct' : 'wrong');
+    this.reportQuestion(correct);
     const fb = q('.quiz-feedback', this.el);
     fb.classList.add(correct ? 'is-good' : 'is-bad');
     fb.innerHTML = `<span class="fb-icon">${icon(correct ? 'check' : 'close', 18)}</span><div class="fb-text"><strong>${correct ? 'Riktig!' : 'Feil svar.'}</strong><div class="explain">${qd.explanation || ''}</div></div>`;
@@ -339,6 +440,9 @@ class Drill extends BaseQuiz {
 
     inp.disabled = true;
     if (correct) this.score++;
+    this.answerLog.push({ q: qd.a + ' × ' + qd.b, chosen: val, answerText: qd.ans, correct, explanation: qd.a + ' × ' + qd.b + ' = ' + qd.ans });
+    play(correct ? 'correct' : 'wrong');
+    this.reportQuestion(correct);
     msg.textContent = correct
       ? `Riktig! ${qd.a} × ${qd.b} = ${qd.ans}`
       : `Ikke helt riktig. ${qd.a} × ${qd.b} = ${qd.ans}`;
@@ -741,14 +845,17 @@ class MapQuiz extends BaseQuiz {
       el.classList.remove('is-wrong');
       el.classList.add('is-correct');
       this.markFound();
+      play('correct');
       this.fbHost.classList.add('is-good');
       const praise = ['Riktig!', 'Flott!', 'Der ja!', 'Midt i blinken!', 'Kjempebra!', 'Nesten som en globus-professor!'];
       this.fbHost.innerHTML = `<span class="fb-chip">${icon('check', 16)}</span><div class="fb-text"><strong>${praise[Math.floor(Math.random() * praise.length)]}</strong><div class="explain">${this.current.name} ligger her.${this.current.c.capital ? ' Hovedstaden er ' + this.current.c.capital + '.' : ''}</div></div>`;
       this.updateCounters();
+      this.reportMapFound();
       if (this._advanceTimer) clearTimeout(this._advanceTimer);
       this._advanceTimer = setTimeout(() => { this._advanceTimer = null; this.advance(); }, 900);
     } else {
       this.fail++;
+      play('wrong');
       el.classList.remove('is-correct');
       el.classList.add('is-wrong');
       if (el._wrongTimer) clearTimeout(el._wrongTimer);
@@ -779,6 +886,10 @@ class MapQuiz extends BaseQuiz {
     const total = this.total || this.found.size;
     const fail = this.fail;
     const acc = total + fail ? Math.round((total / (total + fail)) * 100) : 100;
+    play(acc === 100 ? 'win' : 'done');
+    const prevBest = this.bestResult();
+    const isNewBest = this.recordResult(acc, { correct: total, total: total + fail });
+    this.reportMapDone(total, fail);
     const praise = acc >= 100 ? 'Perfekt! Hvert eneste land satt på første forsøk.'
       : acc >= 90 ? 'Kjempebra! Nesten ikke et feiltrykk.'
       : acc >= 70 ? 'Godt jobbet – du vet godt hvor ting ligger.'
@@ -792,6 +903,9 @@ class MapQuiz extends BaseQuiz {
       h('div', { class: 'result-heading', text: `Du fant alle ${total} landene${this.difficulty ? ' i ' + this.difficulty : ''}!` }),
       this.ring(acc),
       h('div', { class: 'result-sub', text: praise }),
+      isNewBest ? h('div', { class: 'result-badge is-new', html: icon('sparkles', 14) + ' Ny personlig rekord!' })
+        : prevBest > 0 ? h('div', { class: 'result-badge is-pb', html: icon('trophy', 14) + ' Personlig rekord: ' + prevBest + ' %' })
+        : null,
       h('div', { class: 'result-stats' },
         h('div', { class: 'rs-item is-good' }, h('div', { class: 'rs-icon', html: icon('check', 16) }), h('div', {}, h('div', { class: 'rs-num', text: String(total) }), h('div', { class: 'rs-label', text: 'Riktige' }))),
         h('div', { class: 'rs-item is-bad' }, h('div', { class: 'rs-icon', html: icon('close', 16) }), h('div', {}, h('div', { class: 'rs-num', text: String(fail) }), h('div', { class: 'rs-label', text: 'Feil' }))),
@@ -844,6 +958,30 @@ class MapQuiz extends BaseQuiz {
     this.buildPool(qa('.country', this.mapStage));
     this.pending = this.questions.slice();
     this.advance();
+    this.reportStart();
     if (this.shell.scrollIntoView) this.shell.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  // Kart-quizer logger hvert grunnleggende riktige funn som ett spørsmål
+  // (gale klikk logges ikke som «spørsmål» for å holde støyen nede).
+  reportMapFound() {
+    trackEvent(EVENT_NAMES.QUIZ_QUESTION_ANSWERED, {
+      ...this.baseData(),
+      correct: true,
+      country: this.current ? this.current.name : '',
+      found: this.found.size,
+      total: this.total || this.found.size,
+      continent: this.continent,
+    });
+  }
+
+  reportMapDone(total, fail) {
+    trackEvent(EVENT_NAMES.QUIZ_COMPLETED, {
+      ...this.baseData(),
+      score: total,
+      total,
+      fail,
+      continent: this.continent,
+    });
   }
 }

@@ -13,6 +13,8 @@ const ICONS = {
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  arrowLeft: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  trend: '<path d="M3 17l5-5 4 3 6-7M14 8h4v4"/>',
   chevron: '<path d="m9 6 6 6-6 6"/>',
   pin: '<path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
   pin2: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/>',
@@ -40,6 +42,13 @@ const ICONS = {
   divide: '<path d="M5 12h14"/><circle cx="12" cy="6" r="1.6"/><circle cx="12" cy="18" r="1.6"/>',
   restart: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>',
   list: '<path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/>',
+  pause: '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
+  refresh: '<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3v4h-4"/>',
+  laptop: '<rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 20h20"/>',
+  eyes: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/>',
+  warning: '<path d="M12 3 2 20h20z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".6"/>',
+  sound: '<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M15.5 8.5a4.5 4.5 0 0 1 0 7M18 6.5a8 8 0 0 1 0 11"/>',
+  mute: '<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="m17 9 5 6M22 9l-5 6"/>',
 };
 
 export function icon(name, size = 18) {

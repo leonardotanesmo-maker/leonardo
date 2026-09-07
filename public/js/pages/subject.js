@@ -6,6 +6,7 @@ import { SUBJECT_BY_SLUG } from '../../data/subjects.js';
 import { QUIZ_BY_ID, quizzesForSubject } from '../../data/quizzes.js';
 import { track } from '../store.js';
 import { SUBJECT_ICON_COLORS } from '../components.js';
+import { trackEvent, EVENT_NAMES } from '../analytics/index.js';
 
 export function renderSubject({ params }) {
   const slug = params.slug;
@@ -21,6 +22,7 @@ export function renderSubject({ params }) {
   }
 
   track('subject', s.slug, s.name);
+  trackEvent(EVENT_NAMES.SUBJECT_OPENED, { subjectSlug: s.slug, subjectLabel: s.name });
   const color = SUBJECT_ICON_COLORS[s.accent] || '#3a5bd9';
   const quizzes = quizzesForSubject(slug);
   const activities = s.activities;

@@ -18,6 +18,7 @@ const FILES = [
   'pages.css',
   'responsive.css',
   'duel.css',
+  'analytics.css',
 ];
 
 let out = '/* Leonardo – samlet stil (autogenerert av scripts/build-css.mjs) */\n/* Kjør "npm run build:css" etter endringer i styles/*.css */\n';
@@ -32,5 +33,12 @@ for (const f of FILES) {
   out += `\n/* ==== ${f} ==== */\n${txt}\n`;
 }
 
+// ---- Minifisering (trygg): fjern kommentarer && overflødig mellomrom ----
+out = out
+  .replace(/\/\*[\s\S]*?\*\//g, (m) => (m.includes('!') ? m : ''))
+  .replace(/\s+/g, ' ')
+  .replace(/\s*([{}:;,>])\s*/g, '$1')
+  .replace(/;\}/g, '}');
+
 await writeFile(OUT, out, 'utf8');
-console.log('site.css generert:', out.length, 'bytes');
+console.log('site.css generert:', out.length, 'bytes (minifisert)');

@@ -23,10 +23,19 @@
   .header-inner { padding: 0 var(--sp-3); gap: var(--sp-2); }
   .brand .brand-name { font-size: var(--fs-md); }
   .header-search input[type="search"] { width: 40px; padding-left: 2.1rem; }
-  .header-search input[type="search"]:focus { width: 40px; }
   .header-search input[type="search"]::placeholder { color: transparent; }
   .header-search .search-input-wrap .icon { left: 12px; }
   .search-dropdown { position: fixed; left: var(--sp-3); right: var(--sp-3); top: var(--header-h); width: auto; }
+
+  /* Når søkefeltet er i bruk på mobil skal det vokse ut over ledig plass
+     (ellers ser man ikke det man har skrevet i den lille 40 px-ikonbaren). */
+  .header-inner:focus-within .brand { display: none; }
+  .header-inner:focus-within .header-tools { flex: 1; }
+  .header-inner:focus-within .header-search { flex: 1; }
+  .header-inner:focus-within .search-input-wrap { flex: 1; }
+  .header-inner:focus-within .header-search input[type="search"] { width: 100%; padding-left: 2.3rem; }
+  .header-inner:focus-within .header-search input[type="search"]::placeholder { color: var(--ink-3); }
+  .header-inner:focus-within .search-dropdown { top: calc(var(--header-h) + 8px); }
 
   .fact-grid { grid-template-columns: 1fr 1fr; }
   .footer-inner { grid-template-columns: 1fr; gap: var(--sp-5); }
@@ -43,6 +52,10 @@
   .setup-shell { padding: var(--sp-5) var(--sp-4); }
   .result-stats { grid-template-columns: 1fr; }
   .quiz-intro-row { align-items: flex-start; }
+
+  /* Fremgang */
+  .prog-stats { grid-template-columns: 1fr 1fr; }
+  .prog-stat { padding: var(--sp-3); }
 }
 
 @media (max-width: 440px) {

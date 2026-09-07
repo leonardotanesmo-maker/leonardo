@@ -10,6 +10,13 @@ let onSelectCb = null;
 let coarse = false;
 let highlighted = null;
 
+// In-memory cache: kartet er identisk per økt og trenger ikke lastes på nytt
+// for hver sidevisning. Fetch bruker standard http-cache (serveren sender
+// «immutable»/lang cache for /assets), så gjengående besøkende slipper å laste
+// ned det ~220 kB store kartet på nytt hver gang – en ny nettleserøkt henter
+// likevel ferske filer fordi assets bare endres ved redeploy.
+let svgTextCache = null;
+
 export function isCoarsePointer() {
   return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
 }
@@ -29,10 +36,12 @@ export async function loadMapOn(stage, onSelect, opts = {}) {
   onSelectCb = onSelect;
   coarse = isCoarsePointer();
   try {
-    const resp = await fetch('assets/map.svg', { cache: 'no-store' });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const text = await resp.text();
-    stage.innerHTML = text;
+    if (svgTextCache === null) {
+      const resp = await fetch('assets/map.svg');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      svgTextCache = await resp.text();
+    }
+    stage.innerHTML = svgTextCache;
     svg = q('svg#world-map', stage);
     tooltip = q('.map-tooltip', stage);
     if (!tooltip && !opts.quiet) {

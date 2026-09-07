@@ -1,6 +1,6 @@
 # JARVIS_STATE.md – Leonardo (nettlæringsverksted, tidligere "Gruble.net")
 
-Oppdatert: 6. september 2026 (7. økt – ny kart-quiz «Finn landet på kartet», kodet av JARVIS). Skrevet av JARVIS for neste AI-økt og for menneskelige utviklere.
+Oppdatert: 6. september 2026 (8. økt – live besøkslogg og analyse: land, IP og enhetsinfo per besøkende, kodet av JARVIS). Skrevet av JARVIS for neste AI-økt og for menneskelige utviklere.
 
 ## Prosjekt
 Nettutgave av et norsk læringsverksted – fag, quizer, gåter og interaktivt verdenskart – bygget helt
@@ -12,7 +12,15 @@ Ordet "gruble"/"grubliser" finnes ikke lenger i kode eller synlig tekst.
 
 - Hjem: `/home/leo/gruble` (vitensiden som serveres fra `public/`)
 - Kjør: `cd /home/leo/gruble && node server.js` → http://localhost:4173
-- Ingen runtime-npm-avhengigheter. Bare `devDependencies` i `scripts/` for dataoppdatering.
+- Én runtime-npm-avhengighet: `geoip-lite` (grovt land/region/by for IP-er, brukt av loggen).
+  Ellers ingen – resten er statiske filer. `devDependencies` i `scripts/` for dataoppdatering.
+
+> **Vil brukeren SE LOGGEN («show me the log for the school website»)?** Start tjeneren
+> (`cd /home/leo/gruble && node server.js`), åpne `http://localhost:4173/#admin` og trykk «Oppdater»
+> – der vises det grafiske besøksoversikten (land/by/flag, IP, enheter, siste hendelser).
+> Alternativt via API: `curl http://localhost:4173/api/events` (hendelser) og
+> `curl http://localhost:4173/api/visitors` (besøkende med IP/land/enhet). Se «Live besøkslogg og
+> analyse» under. Loggen inneholder både ekte besøk og testhendelser (se «er_test»/«test»).
 
 ## Status
 FUNKSJONELT FERDIG og verifisert. Alle kjerneruter og alle 8 quizer fungerer, sjekket med
@@ -104,12 +112,72 @@ headless Chrome (CDP). Ingen runtime-feil (0 unntak) på noen rute. Fikset i den
       vises, kart med 177 land, ingen tooltip-element, klikk gir feedback + lås, «Neste» til Q2,
       full runde til resultatkort, «Prøv igjen» → spillt. 0 konsollfeil. Oseania = 7 spørsmål
       (kun 7 land med flagg+befolkning på kartet).
+11. **Live besøkslogg og analyse (8. økt).** SPA-en sender frivillig hendelsesdata
+     (`PAGE_VIEW`, `QUIZ_*`, `ERROR` m.m.) til Node-tjeneren, som lagrer dem på disk og serverer et
+     grafisk besøksoversikt (land/by med flagg, IP, enhet/nettleser/OS/skjerm/språk/tidssone) i det
+     skjulte admin-dashbordet `#/admin` og via JSON-API. Full beskrivelse under «Live besøkslogg og
+     analyse». Fikset i økten: `ERROR`-hendelser telte ikke i dag/uke/måned-tellerne. Personvern:
+     IP-lagring kan kuttes med `LEONARDO_ANALYTICS_IP_MODE=forkortet` (se under).
+
+## Live besøkslogg og analyse (8. økt)
+- **Loggfil:** `server-data/analytics/events.jsonl` (én hendelse per linje). Katalog velges med
+  `LEONARDO_ANALYTICS_DIR` (standard: `<repo>/server-data/analytics`).
+- **Oppstart:** `cd /home/leo/gruble && node server.js` → http://localhost:4173. For varig prosess:
+  `setsid nohup node server.js > /tmp/leonserver.log 2>&1 &`. Prosessen heter `node-MainThread` –
+  `pgrep -x node` finner den IKKE; finn PID med `ss -tlnp | rg ':4173'` og kill den derfra.
+- **Endepunkter** (server.js):
+  - `POST /api/events` – mottar batch (inntil 200; body = array eller `{batch:[...]}`) av
+    `{eid, event, ts, session, data, ctx, bot}`. Feltet heter **`event`** (ikke `name`);
+    duplikate `eid` dumpes. Tjeneren henter IP, geo og bot-flag per hendelse.
+  - `GET /api/events` – alle hendelser som `{ok, count, events}` (wrapper-objekt, ikke bare array).
+    Standard (`test=0`) viser KUN ekte besøkende; `test=1` kun test; `test=all` alt (med badge).
+  - `GET /api/visitors` – `{ok, visitors:[...]}`: én rad per økt med `ip`, `geo` (land/region/by/
+    lat/lon/tz fra geoip-lite), enhet, nettleser, OS, skjerm, språk, tidssone, hendelser/besøk/feil,
+    siste hendelse og siste side, fag/quiz/test-flag. Kun ekte økter vises.
+  - `GET /api/stats` – aggregater for dashbordet: `overview`, `deviceCounts`, `browserCounts`,
+    `quizCounts`, `pageCounts`, `subjectCounts`, `onlineNow` (økter aktive siste 10 min),
+    `returningSessions` (>= 2 dager), `perDayList` (30 dagers trend), `hourList` (klokkeslett,
+    0-23), `quizPerformance` (per-quiz forsøk/fullført/snitt-%),
+    `rangeCounts` (i dag / 7 dager / 30 dager), `referrerList` (kilder),
+    `countryCounts`+`countryList` (med norsk navn), `regionList`, `cityList`, `geoCache`.
+  - `GET /api/config` – viser `ipCollection`/`ipMode`/`geoLookup` m.m. · `GET /api/health`.
+  - Lesbare endepunkter kan låses med `LEONARDO_ADMIN_KEY` (`server.js` → `adminKeyOk`).
+- **«Ekte besøkende» (real/test/bot):** hver hendelse merkes ved mottak med `test`, `bot` og
+  `real = !test && !bot`. Kun `real`-hendelser teller i statistikk, besøksoversikt og
+  standard-loggen. Bot = UA-heuristikk (`isBotUA` i server-analytics.js: headless/phantom/curl/
+  crawler osv.) ELLER klient-flagget `bot:true` (automasjon setter `window.__LEONARDO_BOT__`,
+  `?bot=1` eller localStorage `leonardo:analytics:bot`). Test-hendelser (TEST_* , testpanel i
+  dashbordet) er `test:true`. Merk: masse-`auto:true`-hendelser fra monitor.js er IKKE bot – de
+  kommer fra ekte besøkende.
+- **IP og personvern:** IP tas fra `X-Forwarded-For` (første verdi), ellers `socket.remoteAddress`;
+  grovt land/region/by utledes med `geoip-lite` (`server-geo.js`, med LRU-cache).
+  `LEONARDO_ANALYTICS_IP_MODE=full` (standard) lagrer full IP; `=forkortet` maskerer siste
+  IPv4-oktett / de siste IPv6-ordene. Den rent statiske GitHub Pages-versjonen og gruppelokal dumping
+  har INGEN tjener – klienten faller tilbake til lokalstat (kun tellere, ingen IP/geo), merket
+  «lokal» i dashbordet. GDPR-hint: foretrekk `=forkortet` hvis dette deles publikt.
+- **geoip-lite er CommonJS:** må importeres som `import geoip from 'geoip-lite'`; navngitt
+  `lookup`-import gir `SyntaxError ... does not provide an export named 'lookup'`.
+- **Frontend:** `public/js/analytics/context.js` (enhet/skjerm/språk/`ln`/`tz`),
+  `public/js/analytics/core.js` (sender hendelser, henter stats/feed/visitors; `fetchVisitors()`;
+  `botActive()`/`isBotEnv()` merker automasjon), `public/js/pages/admin.js` (statusbanner med
+  «Aktiv nå», 9 stat-kort inkl. «Tilbakevendende», «Utvikling»-trend (sidevisninger/dag +
+  klokkeslett), «Quiz-resultater»-liste, land/by-stolper med flagg, utvidbare besøksrader med
+  IP/geo/enhet), `public/styles/analytics.css`. Bygg CSS: `npm run build:css` (→ `public/styles/site.css`).
+- **Loggen ble tømt da «kun ekte besøkende» ble innført** – all tidligere demo-/bot-/test-trafikk
+  er fjernet, så tallene i dashbordet er sanne fra da. Besøk fra automatisert testing blir
+  automatisk merket `bot` og skjult.
+- **Kjent bug fikset i økten:** statusbanneret i `#/admin` ble aldri gjengitt – `renderBanner`
+  var definert, men aldri kalt fra `refresh()`.
+- **Testdata:** loggen inneholder demo-hendelser (flagget via `X-Forwarded-For` mot ekte offentlige
+  IP-er) og ekte besøk fra headless Chrome (localhost = ingen geo). Ikke presentér dem som faktisk
+  trafikk uten å si fra.
 
 ## Kjør rutenettet
 Ruter (hash-router):
 `#/` og `#/hjem` – forside · `#/fag` – alle fag · `#/fag/:slug` – enkeltfag ·
 `#/geografi` – interaktivt verdenskart · `#/geografi/:iso2` – dyplenke til landpanel ·
-`#/quiz` og `#/quiz/:id` – quizer (valg, flagg, drill, kart) · `#/sok` – søkeside · `#/om` – om siden.
+`#/quiz` og `#/quiz/:id` – quizer (valg, flagg, drill, kart) · `#/sok` – søkeside · `#/om` – om siden ·
+`#/admin` – skjult admin-dashbord med live besøksanalyse (land/IP/enhet; kun tilgjengelig med tjener).
 
 ## Struktur (public/)
 - `index.html` – skjellett, laster `js/main.js`
@@ -162,6 +230,18 @@ Interaktivt CDP-testsett i `/tmp/grublebuild/` mot CDP på port 9222 (chromium h
 - `node /tmp/opencode/quiz_test.mjs` (6. økt, Node-logikk med DOM-stub, permanent) → alle grønne;
   dekker randomisering (svar-indeks omregnet etter stokking), unike alternativer,
   flagg-tier-/drill-/math-oppbygging og at gjentatte runder ikke er like.
+  (7. økt: `map ... pool>0`-sjekkene er forventet FAIL under Node-stubben – kart-SVG-en lastes ikke
+  i Node – 15 manglende; se «Kjente forhold».)
+- (8. økt) Analyse verifisert i headless Chrome (CDP-port 9933): `#/` → `#admin` gjenga
+  besøkspanelet med 12 rader + 4 landstolper og flagg/enhet-info; `/api/visitors` returnerte 11
+  besøkende med geo; geo-oppslag verifisert for 8.8.8.8 (US), 1.1.1.1 (AU), 5.9.133.226 (DE),
+  51.120.0.0 (NO/Oslo, riktig lat/lon/tz). Skjermbilde: `/tmp/opencode/admin_shot.png`.
+  Verktøy: `/tmp/opencode/start_chrome.sh` + `/tmp/opencode/cdp_admin.mjs`.
+- (8. økt, «kun ekte besøkende»+) Verifisert at en Chrome-klient uten headless-merkinger blir
+  `real:true` og teller, mens `curl`-UA og klient-flagget `bot:true` blir `real:false` og IKKE
+  teller i `/api/stats`, `/api/visitors` eller standard `/api/events` (men vises med `test=all`).
+  Ny dashbord-UI sjekket i headless Chrome: banneret viser 5 rader inkl. «Aktiv nå», «Utvikling»-
+  seksjonen gjengis, ingen konsollfeil. Skjermbilde: `/tmp/opencode/admin2_shot.png`.
 - Skjermbilder (PNG) i `/tmp/grublebuild/shots/` er regenerert mot dagens build (etter UI-pudding).
 - Merk: kjør aldri to harness-scripts mot samme CDP-port samtidig – de deler én side-target og
   navigasjon/klikk krasjer inn i hverandre. Kjør dem sekvensielt.
@@ -190,6 +270,11 @@ Interaktivt CDP-testsett i `/tmp/grublebuild/` mot CDP på port 9222 (chromium h
    ny randomisert runde på eksisterende kart. Nord-/Sør-Amerika deles via `subregion`
    (`regionKeyOfCountry`); alle 6 kontinenter har ikke-tomme pooler (Oseania kun 7 land på kartet).
    Lett å utvide videre: nye kartquizvarianter (f.eks. «klikk hovedstaden», større-på-kartet).
+7. (8. økt) Analyseloggen og `#/admin` finnes BARE når Node-tjeneren kjører lokalt. På GitHub Pages
+   (statisk `public/`) og i MySQL-gruppelokale demoer er loggen fraværende og dashbordet viser
+   «lokal»-tellere. Hvis loggen skal deles publikt, vurder `LEONARDO_ANALYTICS_IP_MODE=forkortet`
+   + `LEONARDO_ADMIN_KEY` (maskert IP og låste API-er). JSONL-loggen vokser raskt – mulig videre
+   steg: rotasjon/arkivering, kryptering, og filtrering av test-/bot-trafikk.
 
 ## Viktige fallgruver (headless-testing)
 - Ikke bruk `pkill -f <pattern>` som matcher egen kommandolinje – den dreper skallet.

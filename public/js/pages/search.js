@@ -1,7 +1,7 @@
 // Leonardo – søkeside
 import { h } from '../dom.js';
 import { icon } from '../icons.js';
-import { crumbs, SUBJECT_ICON_COLORS } from '../components.js';
+import { crumbs, subjectCard } from '../components.js';
 import { search, SUBJECTS } from '../data.js';
 
 function groupLabel(kind) {
@@ -63,16 +63,7 @@ export function renderSearch({ query }) {
     h('div', { class: 'section' },
       h('h2', { text: 'Alle fag' }),
       h('div', { class: 'subject-grid', style: 'margin-top:var(--sp-4)' },
-        ...SUBJECTS.map((s) => {
-          const color = SUBJECT_ICON_COLORS[s.accent] || '#3a5bd9';
-          return h('a', { class: 'card card-hover subject-card', href: '#/fag/' + s.slug },
-            h('div', { class: 'subject-top' },
-              h('span', { class: 'subject-icon', style: { background: color }, html: icon(s.icon, 24) }),
-            ),
-            h('h3', { text: s.name }),
-            h('p', { text: s.tagline }),
-          );
-        }),
+        ...SUBJECTS.map((s) => subjectCard(s)),
       ),
     ),
   );

@@ -84,7 +84,7 @@ export function openCountryPanel(iso2, opts = {}) {
   body.appendChild(h('img', { class: 'panel-flag', src: c.flagFile || '', alt: 'Flagg for ' + c.name, width: 300, height: 150, loading: 'eager' }));
   body.appendChild(facts);
   body.appendChild(extras);
-  body.appendChild(h('button', { class: 'btn btn-soft', type: 'button', html: icon('arrow', 16) + ' Tilbake til kartet', onclick: () => closeCountryPanel() }));
+  body.appendChild(h('button', { class: 'btn btn-soft', type: 'button', html: icon('arrowLeft', 16) + ' Tilbake til kartet', onclick: () => closeCountryPanel() }));
 
   requestAnimationFrame(() => {
     panelEl.classList.add('is-open');

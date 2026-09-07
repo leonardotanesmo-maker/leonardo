@@ -2,6 +2,11 @@
 
 const routes = [];
 let currentCleanup = null;
+let onRender = null;
+
+export function setOnRender(fn) {
+  onRender = fn;
+}
 
 function parseHash() {
   const raw = location.hash.replace(/^#/, '') || '/';
@@ -98,6 +103,10 @@ export async function render() {
   if (page.mount) {
     currentCleanup = await page.mount();
     if (typeof currentCleanup !== 'function') currentCleanup = null;
+  }
+
+  if (onRender) {
+    try { onRender(); } catch { /* analyse skal aldri knekke ruting */ }
   }
 }
 

@@ -70,6 +70,12 @@ export function mountHeader(host) {
     dropdown.classList.add('is-open');
   }
 
+  // Lukk søkedrop-downen når man velger et treff (ellers blir den stående
+  // åpen over den nye siden, siden treffene ligger inni search-wrap).
+  dropdown.addEventListener('click', (e) => {
+    if (e.target.closest('a')) dropdown.classList.remove('is-open');
+  });
+
   searchInput.addEventListener('input', () => {
     runSearch();
   });
@@ -97,6 +103,17 @@ export function mountHeader(host) {
     ...navItems.map((n) => h('a', { href: n.href, 'data-nav': n.key, text: n.label })),
   );
 
+  // Lukk menyen når man velger et mål – ellers ligger den åpen over den nye siden.
+  mobileNav.addEventListener('click', (e) => {
+    if (e.target.closest('a')) closeMobileNav();
+  });
+
+  function closeMobileNav() {
+    mobileNav.classList.remove('is-open');
+    burger.setAttribute('aria-expanded', 'false');
+    burger.innerHTML = icon('menu', 20);
+  }
+
   const header = h('header', { class: 'header-inner' },
     h('a', { class: 'brand', href: '#/' },
       h('img', { class: 'brand-mark', src: 'assets/favicon.svg', alt: '', width: 34, height: 34 }),
@@ -113,6 +130,11 @@ export function mountHeader(host) {
     const open = mobileNav.classList.toggle('is-open');
     burger.setAttribute('aria-expanded', String(open));
     burger.innerHTML = icon(open ? 'close' : 'menu', 20);
+  });
+
+  // Lukk menyen når skjermen blir stor igjen (ellers ville den ligget tom på bordet).
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 920 && mobileNav.classList.contains('is-open')) closeMobileNav();
   });
 
   host.appendChild(header);

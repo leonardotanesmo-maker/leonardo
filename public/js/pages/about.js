@@ -39,6 +39,14 @@ export function renderAbout() {
       sectionHead('Fagene på Leonardo', 'Velg noe du vil lære', '#/fag', 'Alle fag'),
       h('div', { class: 'subject-grid' }, ...subjectCards(SUBJECTS)),
     ),
+    h('div', { class: 'section' },
+      sectionHead('Personvern', 'Hvordan Leonardo behandler data'),
+      h('div', { class: 'card', style: 'padding:var(--sp-5)' },
+        h('p', { text: 'Leonardo samler ikke inn navn, e-postadresser, telefonnumre, passord, hjemmeadresser, GPS-posisjoner eller innloggingsinfo.' }),
+        h('p', { style: 'margin-top:var(--sp-3)' }, 'Når siden kjøres fra en Leonardo-server, kan den lagre hendelser (hvilke quizer som spilles, et tilfeldig øktnummer, enhetskategorier, IP-adresse og grovt land/by) for å se hvordan siden brukes – synlig i admin-dashbordet (#/admin). Ingen data brukes til reklame, og besøker-IP kan maskeres på serveren (LEONARDO_ANALYTICS_IP_MODE). Hendelsene knyttes ikke til navn eller e-post.'),
+        h('p', { style: 'margin-top:var(--sp-3)' }, 'Åpner du siden som en ren statisk side (GitHub Pages) uten tilkoblet server, skjer all lagring kun i nettleseren din (localStorage) på din egen enhet.'),
+      ),
+    ),
   );
 
   return { title: 'Om Leonardo', element: el };

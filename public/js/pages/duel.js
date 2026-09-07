@@ -159,7 +159,7 @@ export function renderDuel({ params }) {
       h('div', { class: 'setup-head' },
         h('h2', { text: title }),
         h('p', { text: desc }),
-        onBack ? h('button', { class: 'btn btn-ghost btn-sm', type: 'button', html: icon('arrow', 14) + ' Tilbake', onclick: onBack }) : null,
+        onBack ? h('button', { class: 'btn btn-ghost btn-sm', type: 'button', html: icon('arrowLeft', 14) + ' Tilbake', onclick: onBack }) : null,
       ),
       content,
     );

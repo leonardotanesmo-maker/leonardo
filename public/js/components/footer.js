@@ -1,6 +1,8 @@
 // Leonardo – footer
 import { h } from '../dom.js';
 import { SUBJECTS } from '../../data/subjects.js';
+import { soundsEnabled, setSoundEnabled } from '../audio.js';
+import { icon } from '../icons.js';
 
 export function mountFooter(host) {
   const footer = h('footer', { class: 'footer-inner' },
@@ -32,9 +34,27 @@ export function mountFooter(host) {
   );
 
   const note = h('div', { class: 'footer-note' },
-    'Leonardo · Læring, quizer og gåter · Laget for nysgjerrige elever.',
+    'Leonardo · Læring, quizer og gåter · Laget for nysgjerrige elever · Kun anonym statistikk samles inn.',
   );
 
+  // Lydknapp – liten toggle i footeren
+  let soundOn = soundsEnabled();
+  const soundBtn = h('button', {
+    class: 'btn btn-ghost btn-sound',
+    'aria-pressed': String(soundOn),
+    'aria-label': 'Slå av/på lyd',
+    title: 'Slå av/på lyd',
+    html: icon(soundOn ? 'sound' : 'mute', 18),
+  });
+  soundBtn.addEventListener('click', () => {
+    soundOn = !soundOn;
+    setSoundEnabled(soundOn);
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+    soundBtn.innerHTML = icon(soundOn ? 'sound' : 'mute', 18);
+  });
+
+  const noteRow = h('div', { class: 'footer-note-row' }, note, soundBtn);
+
   host.appendChild(footer);
-  host.appendChild(note);
+  host.appendChild(noteRow);
 }
