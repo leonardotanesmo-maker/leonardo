@@ -47,25 +47,27 @@ function progressSection() {
 }
 
 const heroVisual = () => {
-  return h('div', { class: 'hero-mini-map', 'aria-hidden': 'true' },
-    h('svg', { viewBox: '0 0 480 300', role: 'presentation' },
-      h('defs', { html: `<linearGradient id="hm-ocean" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#dfe9fb"/><stop offset="1" stop-color="#c3d6f4"/>
-        </linearGradient>` }),
-      h('circle', { cx: '240', cy: '150', r: '138', fill: 'url(#hm-ocean)' }),
-      h('rect', { x: '238', y: '12', width: '4', height: '276', fill: 'rgba(255,255,255,.85)' }),
-      h('rect', { x: '102', y: '148', width: '276', height: '4', fill: 'rgba(255,255,255,.85)' }),
-      h('ellipse', { cx: '240', cy: '150', rx: '138', ry: '44', fill: 'none', stroke: 'rgba(255,255,255,.7)', 'stroke-width': '2' }),
-      h('ellipse', { cx: '240', cy: '150', rx: '44', ry: '138', fill: 'none', stroke: 'rgba(255,255,255,.7)', 'stroke-width': '2' }),
-      h('path', { d: 'M118 96c30-34 92-30 118 6-38 4-64 34-62 70-42-10-62-46-56-76z', fill: '#9dbcdf' }),
-      h('path', { d: 'M262 216c40 8 86-8 96-44 20 34 6 78-34 92-28-8-52-28-62-48z', fill: '#9dbcdf' }),
-      h('path', { d: 'M96 214c22-18 56-12 68 6-18 20-48 26-68 8z', fill: '#9dbcdf' }),
-      h('circle', { cx: '162', cy: '188', r: '6', fill: '#3a5bd9', stroke: '#fff', 'stroke-width': '2' }),
-      h('circle', { cx: '320', cy: '104', r: '6', fill: '#3a5bd9', stroke: '#fff', 'stroke-width': '2' }),
-    ),
-    h('div', { class: 'hm-label' },
-      h('span', { html: icon('map', 13) + ' Interaktivt verdenskart med alle verdens land' }),
-      h('a', { href: '#/geografi', text: 'Utforsk →' }),
+  return h('div', { class: 'hero-art', 'aria-hidden': 'true' },
+    h('div', { class: 'hero-mini-map' },
+      h('svg', { viewBox: '0 0 480 300', role: 'presentation' },
+        h('defs', { html: `<linearGradient id="hm-ocean" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#dfe9fb"/><stop offset="1" stop-color="#c3d6f4"/>
+          </linearGradient>` }),
+        h('circle', { cx: '240', cy: '150', r: '138', fill: 'url(#hm-ocean)' }),
+        h('rect', { x: '238', y: '12', width: '4', height: '276', fill: 'rgba(255,255,255,.85)' }),
+        h('rect', { x: '102', y: '148', width: '276', height: '4', fill: 'rgba(255,255,255,.85)' }),
+        h('ellipse', { cx: '240', cy: '150', rx: '138', ry: '44', fill: 'none', stroke: 'rgba(255,255,255,.7)', 'stroke-width': '2' }),
+        h('ellipse', { cx: '240', cy: '150', rx: '44', ry: '138', fill: 'none', stroke: 'rgba(255,255,255,.7)', 'stroke-width': '2' }),
+        h('path', { d: 'M118 96c30-34 92-30 118 6-38 4-64 34-62 70-42-10-62-46-56-76z', fill: '#9dbcdf' }),
+        h('path', { d: 'M262 216c40 8 86-8 96-44 20 34 6 78-34 92-28-8-52-28-62-48z', fill: '#9dbcdf' }),
+        h('path', { d: 'M96 214c22-18 56-12 68 6-18 20-48 26-68 8z', fill: '#9dbcdf' }),
+        h('circle', { cx: '162', cy: '188', r: '6', fill: '#3a5bd9', stroke: '#fff', 'stroke-width': '2' }),
+        h('circle', { cx: '320', cy: '104', r: '6', fill: '#3a5bd9', stroke: '#fff', 'stroke-width': '2' }),
+      ),
+      h('div', { class: 'hm-label' },
+        h('span', { html: icon('map', 13) + ' Interaktivt verdenskart med alle verdens land' }),
+        h('a', { href: '#/geografi', text: 'Utforsk →' }),
+      ),
     ),
   );
 }
