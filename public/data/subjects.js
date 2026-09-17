@@ -18,6 +18,7 @@ export const SUBJECTS = [
       { kind: 'quiz', id: 'hovedsteder-verden' },
       { kind: 'quiz', id: 'flagg-verden' },
       { kind: 'quiz', id: 'verdensdeler' },
+      { kind: 'quiz', id: 'verdensrekorder' },
     ],
     goals: [
       'Kunne plassere land og verdensdeler på kartet',
@@ -38,6 +39,7 @@ export const SUBJECTS = [
     activities: [
       { kind: 'quiz', id: 'matematikk' },
       { kind: 'quiz', id: 'gangetabellen' },
+      { kind: 'quiz', id: 'brok' },
     ],
     goals: [
       'Regne med pluss, minus, ganging og deling',
@@ -58,11 +60,14 @@ export const SUBJECTS = [
       { kind: 'quiz', id: 'ord-og-betydning' },
       { kind: 'quiz', id: 'ordklasser' },
       { kind: 'quiz', id: 'synonymer-antonymer' },
+      { kind: 'quiz', id: 'rettskriving' },
+      { kind: 'quiz', id: 'ordtak-og-uttrykk' },
     ],
     goals: [
       'Kunne synonymer og antonymer',
       'Kjenne igjen ord med flere betydninger',
       'Skille substantiv, verb, adjektiv og andre ordklasser',
+      'Kunne kjente ordtak og faste uttrykk',
     ],
   },
   {
@@ -76,6 +81,7 @@ export const SUBJECTS = [
     activities: [
       { kind: 'quiz', id: 'engelsk-grunnord' },
       { kind: 'quiz', id: 'engelske-dyr' },
+      { kind: 'quiz', id: 'engelske-verb' },
     ],
     goals: [
       'Kunne vanlige engelske hverdagsord',
@@ -96,11 +102,13 @@ export const SUBJECTS = [
       { kind: 'quiz', id: 'planetene' },
       { kind: 'quiz', id: 'solsystemet' },
       { kind: 'quiz', id: 'kroppen' },
+      { kind: 'quiz', id: 'planter-og-dyr' },
     ],
     goals: [
       'Kunne planetene i solsystemet',
       'Forstå jordens plass i verdensrommet',
       'Lære om kroppens organer og hvordan de virker',
+      'Kjenne igjen dyr, trær og planter i naturen',
       'Se sammenhenger i naturen',
     ],
   },
@@ -114,6 +122,7 @@ export const SUBJECTS = [
       'Hvordan henger verden sammen? Lær deg hovedsteder, land, fylker og kulturer til høyre og til venstre for Norge.',
     activities: [
       { kind: 'quiz', id: 'norge-fakta' },
+      { kind: 'quiz', id: 'norske-fylker' },
       { kind: 'quiz', id: 'hovedsteder-europa' },
       { kind: 'quiz', id: 'hovedsteder-verden' },
       { kind: 'map', id: 'worldmap', title: 'Verdenskartet', desc: 'Utforsk land og hovedsteder på kartet.' },
@@ -132,10 +141,11 @@ export const SUBJECTS = [
     icon: 'brain',
     tagline: 'Vri hodet og tenk.',
     intro:
-      'Akkurat som muskelen blir hjernen sterkere av trening. Her får du gåter som får deg til å tenke.',
+      'Akkurat som en muskel blir hjernen sterkere av trening. Her får du gåter som får deg til å tenke.',
     activities: [
       { kind: 'quiz', id: 'gater' },
       { kind: 'quiz', id: 'logiske-gater' },
+      { kind: 'quiz', id: 'matte-gater' },
     ],
     goals: [
       'Trene logisk tenkning',
@@ -162,14 +172,22 @@ export const SUBJECTS = [
       { kind: 'quiz', id: 'planetene' },
       { kind: 'quiz', id: 'solsystemet' },
       { kind: 'quiz', id: 'kroppen' },
-      { kind: 'quiz', id: 'ord-og-betydning' },
+{ kind: 'quiz', id: 'ord-og-betydning' },
       { kind: 'quiz', id: 'ordklasser' },
       { kind: 'quiz', id: 'synonymer-antonymer' },
-      { kind: 'quiz', id: 'engelsk-grunnord' },
-      { kind: 'quiz', id: 'engelske-dyr' },
+      { kind: 'quiz', id: 'rettskriving' },
+      { kind: 'quiz', id: 'ordtak-og-uttrykk' },
+      { kind: 'quiz', id: 'engelske-verb' },
       { kind: 'quiz', id: 'norge-fakta' },
+      { kind: 'quiz', id: 'norske-fylker' },
+      { kind: 'quiz', id: 'planter-og-dyr' },
+      { kind: 'quiz', id: 'verdensrekorder' },
+      { kind: 'quiz', id: 'brok' },
+      { kind: 'quiz', id: 'rettskriving' },
+      { kind: 'quiz', id: 'engelske-verb' },
       { kind: 'quiz', id: 'gater' },
       { kind: 'quiz', id: 'logiske-gater' },
+      { kind: 'quiz', id: 'matte-gater' },
     ],
     goals: [
       'Teste kunnskapen din i alle fag',
@@ -186,4 +204,5 @@ export const POPULAR = [
   { kind: 'quiz', id: 'matematikk' },
   { kind: 'quiz', id: 'finn-pa-kartet' },
   { kind: 'quiz', id: 'flagg-verden' },
+  { kind: 'quiz', id: 'verdensrekorder' },
 ];

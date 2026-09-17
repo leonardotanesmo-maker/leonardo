@@ -136,6 +136,14 @@
   gap: var(--sp-3);
   align-items: center;
   padding: var(--sp-4) var(--sp-5);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 3px rgba(255, 255, 255, 0.5) inset, var(--shadow-3d-sm);
+  transition: transform var(--t-base), box-shadow var(--t-base), border-color var(--t-base);
+  transform: translateZ(0);
+}
+.admin-stat:hover {
+  transform: translateZ(18px) translateY(-4px) rotateX(-2deg);
+  border-color: var(--line-2);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 3px rgba(255, 255, 255, 0.5) inset, var(--shadow-3d-md);
 }
 .admin-stat-ico {
   color: var(--primary);
@@ -212,8 +220,9 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-m);
-  overflow: hidden;
-  box-shadow: var(--shadow-s);
+  padding: var(--sp-4) var(--sp-5);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 3px rgba(255, 255, 255, 0.5) inset, 0 3px 6px rgba(22, 28, 46, 0.08);
+  transform: translateZ(0);
 }
 .admin-feed-count {
   font-size: var(--fs-xs);

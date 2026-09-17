@@ -105,6 +105,8 @@ export async function render() {
     if (typeof currentCleanup !== 'function') currentCleanup = null;
   }
 
+  try { await import('./tilt.js').then((m) => m.initTilt(view)); } catch { /* igjen-inn skal aldri knekke ruting */ }
+
   if (onRender) {
     try { onRender(); } catch { /* analyse skal aldri knekke ruting */ }
   }

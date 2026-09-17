@@ -30,7 +30,137 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: var(--glow-bg), var(--page-bg);
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -5%, rgba(255, 255, 255, 0.9), transparent 65%),
+    radial-gradient(ellipse 60% 40% at 85% 20%, rgba(177, 156, 214, 0.18), transparent 70%),
+    radial-gradient(ellipse 50% 35% at 10% 75%, rgba(58, 91, 217, 0.12), transparent 70%),
+    var(--glow-bg), var(--page-bg);
+}
+
+/* Bakgrunns-dybdelag */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: linear-gradient(165deg, rgba(58, 91, 217, 0.05), transparent 30%, rgba(123, 92, 214, 0.06) 60%, transparent), var(--bg);
+}
+
+/* ===== Levende bakgrunnslag (injiseres av js/ambient.js) ===== */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambient-orb {
+  position: absolute;
+  width: var(--w, 420px);
+  height: var(--h, 420px);
+  border-radius: 50%;
+  opacity: 0.55;
+  filter: blur(56px);
+  will-change: transform;
+  animation: orbDrift 26s ease-in-out infinite;
+}
+.ambient-orb::after {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.ambient-orb-a {
+  top: -6%;
+  right: 4%;
+  background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--primary) 26%, transparent), transparent 68%);
+  animation-duration: 32s;
+}
+.ambient-orb-b {
+  bottom: -8%;
+  left: -6%;
+  background: radial-gradient(circle at 60% 40%, color-mix(in srgb, var(--violet) 22%, transparent), transparent 68%);
+  animation-duration: 38s;
+  animation-delay: -8s;
+}
+.ambient-orb-c {
+  top: 34%;
+  left: 6%;
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--c-naturfag) 16%, transparent), transparent 70%);
+  animation-duration: 44s;
+  animation-delay: -16s;
+}
+.ambient-orb-d {
+  bottom: 20%;
+  right: -8%;
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--c-hjernetrim) 15%, transparent), transparent 70%);
+  animation-duration: 50s;
+  animation-delay: -24s;
+}
+
+.ambient-aurora {
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(58, 91, 217, 0.07) 62deg,
+    transparent 138deg,
+    rgba(123, 92, 214, 0.06) 212deg,
+    transparent 292deg,
+    rgba(15, 138, 138, 0.05) 342deg,
+    transparent 360deg
+  );
+  filter: blur(46px);
+  animation: auroraSpin 70s linear infinite;
+  opacity: 0.85;
+}
+
+.ambient-grid {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: -32%;
+  top: 42%;
+  background-image:
+    linear-gradient(rgba(58, 91, 217, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(58, 91, 217, 0.09) 1px, transparent 1px);
+  background-size: 44px 44px;
+  transform: perspective(560px) rotateX(62deg);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent 78%);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent 78%);
+  animation: gridFlow 18s linear infinite;
+  opacity: 0.5;
+}
+
+.ambient-dots {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(58, 91, 217, 0.22) 1px, transparent 1.5px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0, 0, 0, 0.35), transparent 60%);
+  mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0, 0, 0, 0.35), transparent 60%);
+  opacity: 0.5;
+}
+
+.ambient.is-static .ambient-orb,
+.ambient.is-static .ambient-aurora,
+.ambient.is-static .ambient-grid { animation: none; }
+
+@keyframes orbDrift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(40px, -34px, 0) scale(1.12); }
+}
+@keyframes auroraSpin {
+  to { transform: rotate(1turn); }
+}
+@keyframes gridFlow {
+  from { background-position: 0 0; }
+  to { background-position: 0 44px; }
 }
 
 h1, h2, h3, h4 {

@@ -24,7 +24,7 @@ import { createInterface } from 'node:readline';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { clientIp, storedIp, geoForIp, ipMode, geoCacheInfo } from './server-geo.js';
+import { clientIp, storedIp, geoForIp, ipMode, geoCacheInfo, geoAvailable } from './server-geo.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -102,7 +102,7 @@ export function analyticsStatus() {
     lastSeq: seq,
     geo: {
       ipMode: ipMode(),
-      geoLookup: true,
+      geoLookup: geoAvailable(),
       cache: geoCacheInfo(),
     },
   };

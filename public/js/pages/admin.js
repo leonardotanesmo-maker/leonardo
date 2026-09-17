@@ -286,7 +286,7 @@ function renderStats(stats) {
   const t = stats.totals || {};
   const avg = t.avgQuizScorePct;
   const cards = [
-    statCard('Bespøk', t.visits ?? 0, 'visits', stats.ranges, 'eyes'),
+              statCard('Besøk', t.visits ?? 0, 'visits', stats.ranges, 'eyes'),
     statCard('Økter', t.uniqueSessions ?? 0, 'sessions', stats.ranges, 'users'),
     statCard('Tilbakevendende', stats.returningSessions ?? 0, null, null, 'restart'),
     statCard('Quizer startet', t.quizzesStarted ?? 0, null, null, 'bolt'),

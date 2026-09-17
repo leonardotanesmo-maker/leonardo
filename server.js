@@ -14,10 +14,12 @@
 // Les README / JARVIS_STATE.md (#./LIVE LOG / ANALYTICS SYSTEM) for detaljer.
 import http from 'node:http';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { ensureAnalytics, ingestEvents, listEvents, aggregateStats, aggregateVisitors, adminKeyOk, analyticsStatus } from './server-analytics.js';
+import { attachDuelServer, duelStatus } from './server-duel.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, 'public');
@@ -94,7 +96,7 @@ async function handleApi(req, res, urlPath) {
   }
 
   if (urlPath === '/api/health' && method === 'GET') {
-    json(res, 200, analyticsStatus());
+    json(res, 200, { ...analyticsStatus(), duel: duelStatus() });
     return;
   }
 
@@ -242,7 +244,29 @@ const server = http.createServer(async (req, res) => {
 
 await ensureAnalytics();
 
+// Duell-reléet (WebSocket) henger på samme server. Da virker duell uten
+// eksterne tjenester – også når begge spillerne er på samme lokale nett.
+attachDuelServer(server);
+
+function lanAddresses() {
+  const out = [];
+  const nets = os.networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] || []) {
+      const family = typeof net.family === 'string' ? net.family : 'IPv' + net.family;
+      if (family === 'IPv4' && !net.internal) out.push(net.address);
+    }
+  }
+  return out;
+}
+
 server.listen(PORT, () => {
   console.log(`Leonardo kjører på http://localhost:${PORT}`);
+  const lan = lanAddresses();
+  if (lan.length) {
+    console.log('På samme nett (WiFi) kan klassekamerater åpne:');
+    for (const ip of lan) console.log(`   http://${ip}:${PORT}`);
+  }
+  console.log(`Duell-relé: ws://<adresse>:${PORT}/api/duel (innebygd, ingen ekstern tjeneste)`);
   console.log(`Analytics-logg: ${analyticsStatus().dir}`);
 });

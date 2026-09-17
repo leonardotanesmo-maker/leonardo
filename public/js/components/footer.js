@@ -27,8 +27,10 @@ export function mountFooter(host) {
       h('h4', { text: 'Laget av' }),
       h('ul', {},
         h('li', {}, h('span', { text: 'Leonardo' })),
+        h('li', {}, h('a', { href: '#/om', text: 'Om Leonardo' })),
         h('li', {}, h('span', { text: 'Nidaros idretts ungdomsskole' })),
         h('li', {}, h('span', { text: 'Tiller, Trondheim' })),
+        h('li', {}, h('a', { href: '#/personvern', text: 'Personvern og informasjonskapsler' })),
       ),
     ),
   );

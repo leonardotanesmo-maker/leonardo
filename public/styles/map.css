@@ -6,7 +6,8 @@
   border: 1px solid var(--line);
   border-radius: var(--r-l);
   overflow: hidden;
-  box-shadow: var(--shadow-m);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 3px rgba(255, 255, 255, 0.5) inset, 0 4px 10px rgba(22, 28, 46, 0.1), 0 20px 44px rgba(31, 41, 80, 0.18);
+  transform: perspective(var(--perspective)) translateZ(0) rotateX(1.2deg);
 }
 
 .map-stage svg { display: block; width: 100%; height: auto; touch-action: manipulation; }
@@ -101,14 +102,15 @@
   color: var(--ink-2);
   background: var(--surface-2);
   border: 1px solid var(--line);
-  box-shadow: 0 1px 2px rgba(22, 28, 46, 0.04);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 2px rgba(255, 255, 255, 0.5) inset, 0 2px 4px rgba(22, 28, 46, 0.08), 0 8px 16px rgba(22, 28, 46, 0.05);
+  transform: translateZ(0);
 }
 .map-counter .cnt-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; }
 .map-counter b { font-size: var(--fs-base); font-weight: 800; line-height: 1; color: var(--ink); }
-.map-counter.is-ok { color: var(--ok); border-color: var(--ok-border); background: var(--ok-soft); }
+.map-counter.is-ok { color: var(--ok); border-color: var(--ok-border); background: var(--ok-soft); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 2px rgba(255, 255, 255, 0.5) inset, 0 4px 12px rgba(24, 154, 91, 0.22); }
 .map-counter.is-ok b { color: var(--ok); }
 .map-counter.is-ok .cnt-dot { background: var(--ok); }
-.map-counter.is-bad { color: var(--err); border-color: var(--err-border); background: var(--err-soft); }
+.map-counter.is-bad { color: var(--err); border-color: var(--err-border); background: var(--err-soft); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 2px rgba(255, 255, 255, 0.5) inset, 0 4px 12px rgba(209, 80, 80, 0.18); }
 .map-counter.is-bad b { color: var(--err); }
 .map-counter.is-bad .cnt-dot { background: var(--err); }
 
@@ -126,7 +128,9 @@
   background: #fff5da;
   border: 1px solid #f0dc9c;
   cursor: pointer;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 2px rgba(255, 255, 255, 0.5) inset, 0 2px 4px rgba(22, 28, 46, 0.06);
   transition: transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast), opacity var(--t-fast);
+  transform: translateZ(0);
 }
 .map-hint-btn .icon, .map-hint-btn .hint-ico { display: inline-flex; }
 .map-hint-btn .hint-label { text-transform: uppercase; }
@@ -143,11 +147,12 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
+  box-shadow: 0 1px 3px rgba(107, 68, 0, 0.3), 0 0 8px rgba(255, 210, 87, 0.5);
 }
-.map-hint-btn:hover { border-color: #f0c75a; transform: translateY(-1px); box-shadow: var(--shadow-s); }
+.map-hint-btn:hover { border-color: #f0c75a; transform: translateZ(14px) translateY(-3px) rotateX(-2deg); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 2px rgba(255, 255, 255, 0.5) inset, 0 6px 14px rgba(22, 28, 46, 0.1), 0 12px 26px rgba(240, 200, 90, 0.35); }
 .map-hint-btn:focus-visible { outline: none; border-color: var(--primary); box-shadow: var(--focus-ring); }
 .map-hint-btn.is-out { opacity: 0.45; cursor: not-allowed; }
-.map-hint-btn.is-out:hover { transform: none; box-shadow: none; border-color: #f0dc9c; }
+.map-hint-btn.is-out:hover { transform: translateZ(0); box-shadow: none; border-color: #f0dc9c; }
 
 .map-hud .quiz-q-text {
   margin: 0;
@@ -207,7 +212,8 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-m);
-  box-shadow: var(--shadow-m);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 3px rgba(255, 255, 255, 0.5) inset, 0 4px 10px rgba(22, 28, 46, 0.14), 0 16px 34px rgba(31, 41, 80, 0.16);
+  transform: translateZ(10px);
 }
 .map-zoom-btn {
   width: 34px;
@@ -220,10 +226,10 @@
   color: var(--ink-2);
   border-radius: var(--r-s);
   cursor: pointer;
-  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
 }
-.map-zoom-btn:hover { background: var(--surface-2); color: var(--ink); }
-.map-zoom-btn:active { transform: scale(0.92); }
+.map-zoom-btn:hover { background: var(--surface-2); color: var(--ink); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 2px rgba(255, 255, 255, 0.5) inset, 0 3px 8px rgba(22, 28, 46, 0.1); }
+.map-zoom-btn:active { transform: scale(0.88) translateZ(-4px); box-shadow: var(--shadow-3d-pressed); }
 .map-zoom-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 /* Tilbakemelding: toast nederst midt på kartet */
@@ -242,13 +248,13 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-m);
-  box-shadow: var(--shadow-m);
+  box-shadow: 0 12px 28px rgba(22, 28, 46, 0.15), 0 40px 80px rgba(31, 41, 80, 0.2), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
   color: var(--ink-2);
   animation: fbIn var(--t-base);
   z-index: 7;
 }
 @keyframes fbIn {
-  from { opacity: 0; transform: translate(-50%, 10px); }
+  from { opacity: 0; transform: translate(-50%, 12px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 .quiz-fb-float .fb-chip {

@@ -184,6 +184,11 @@ function normalizeLocalEvents(arr) {
 export function trackEvent(event, data = {}, opts = {}) {
   const cfg = getConfig();
   if (!cfg.enabled) return null;
+  // Respekter informasjonskapsel-samtykke: uten samtykke samles det ikke inn
+  // data i det hele tatt (ikke engang lokalt). sett av consent.js.
+  try {
+    if (window.__LEONARDO_TRACK__ === false) return null;
+  } catch { /* ignorer */ }
   const e = {
     eid: uuid(),
     event,

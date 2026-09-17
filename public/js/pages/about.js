@@ -11,7 +11,7 @@ export function renderAbout() {
     h('div', { class: 'about-grid' },
       h('div', {},
         h('p', { text: 'Leonardo ble født i 2012 og går på Nidaros idretts ungdomsskole i Tiller. Dette nettstedet er laget av Leonardo – med fag, quizer, gåter og et interaktivt verdenskart.' }),
-        h('p', { text: 'Tanken bak siden er å tilby oppgaver som krever lite forberedelser, er lette å forstå, morsomme å bruke og gir god læringseffekt.' }),
+        h('p', { text: 'Tanken bak siden er å tilby oppgaver som krever få forberedelser, er lette å forstå, morsomme å bruke og gir god læringseffekt.' }),
         h('p', { text: 'Akkurat som en muskel blir sterkere med trening, blir hjernen skarpere med tenking. Så bøy hjernens «biceps» – tenk, prøv, lær!' }),
       ),
       h('div', {},

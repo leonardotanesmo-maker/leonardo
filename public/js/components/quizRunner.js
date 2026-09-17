@@ -337,7 +337,7 @@ class ChoiceQuiz extends BaseQuiz {
     const hasFlag = !!qd.flag;
     const list = h('ul', { class: 'opt-list' }, ...qd.options.map((o, i) => {
       return h('li', {},
-        h('button', { class: 'opt', type: 'button', 'data-i': String(i), onclick: (e) => this.answer(e, i) },
+        h('button', { class: 'opt', type: 'button', 'data-i': String(i), style: `--i:${i}`, onclick: (e) => this.answer(e, i) },
           h('span', { class: 'opt-key', text: LETTERS[i] }),
           h('span', { text: o }),
         ),

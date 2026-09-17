@@ -10,7 +10,25 @@
 //
 // Miljøvariabler:
 //   LEONARDO_ANALYTICS_IP_MODE  = full (default) | forkortet
-import geoip from 'geoip-lite';
+//
+// geoip-lite er valgfritt: hvis pakken ikke er installert (f.eks. på en lett
+// gratis-host som bare kjører duell-reléet) starter serveren likevel, og
+// geo-oppslag returnerer bare null. Lastes derfor lazy i stedet for statisk.
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+let _geoip;
+let _geoipTried = false;
+function loadGeoip() {
+  if (_geoipTried) return _geoip;
+  _geoipTried = true;
+  try {
+    _geoip = require('geoip-lite');
+  } catch {
+    _geoip = null;
+  }
+  return _geoip;
+}
 
 const IP_MODE = process.env.LEONARDO_ANALYTICS_IP_MODE === 'forkortet' ? 'forkortet' : 'full';
 
@@ -97,6 +115,8 @@ export function geoForIp(ip) {
 function GeoLookupSafe(ip) {
   try {
     if (!ip || !/^[\da-fA-F:.]+$/.test(ip)) return null;
+    const geoip = loadGeoip();
+    if (!geoip) return null;
     return geoip.lookup(ip);
   } catch {
     return null;
@@ -105,4 +125,9 @@ function GeoLookupSafe(ip) {
 
 export function geoCacheInfo() {
   return { size: cache.size, hits: cacheHits.hits, misses: cacheHits.misses };
+}
+
+// Om geo-databasen faktisk er tilgjengelig (geoip-lite kan mangle på lette hoster).
+export function geoAvailable() {
+  return !!loadGeoip();
 }

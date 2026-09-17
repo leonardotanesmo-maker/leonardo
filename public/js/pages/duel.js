@@ -35,9 +35,9 @@ export function renderDuel({ params }) {
   const el = h('div', { class: 'container page-pad' },
     crumbs([{ label: 'Hjem', href: '#/' }, { label: 'Duell' }]),
     h('div', { class: 'duel-hero' },
-      h('span', { class: 'eyebrow', html: icon('users', 13) + ' To spillere · èn skjerm hver' }),
+      h('span', { class: 'eyebrow', html: icon('users', 13) + ' To spillere · én skjerm hver' }),
       h('h1', { html: 'Utfordrer en klassekamerat til <span class="grad-text">duell</span>' }),
-      h('p', { text: 'Lag en duell og få en kode. Klassokameraten din skriver inn koden og er med med en gang – dere svarer på de samme spørsmålene, og den med flest riktige vinner.' }),
+      h('p', { text: 'Lag en duell og få en kode. Klassekameraten din skriver inn koden og er med med en gang – dere svarer på de samme spørsmålene, og den med flest riktige vinner.' }),
     ),
     stage,
   );
@@ -65,9 +65,12 @@ export function renderDuel({ params }) {
     partnerAnswered: 0,
     partnerTimeMs: 0,
     partnerAgain: false,
+    locked: false,
+    introTimer: null,
   };
 
   function teardown() {
+    if (M.introTimer) { clearTimeout(M.introTimer); M.introTimer = null; }
     if (M.net) { M.net.destroy(); M.net = null; }
   }
 
@@ -87,12 +90,12 @@ export function renderDuel({ params }) {
   function renderLanding() {
     M.phase = 'landing';
     const maze = h('div', { class: 'duel-actions' },
-      h('button', { class: 'duel-action-card', type: 'button', onclick: renderSubjectPick },
+      h('button', { class: 'duel-action-card is-tiltable', type: 'button', onclick: renderSubjectPick },
         h('span', { class: 'duel-action-icon', html: icon('plus', 26) }),
         h('span', { class: 'duel-action-title', text: 'Opprett en duell' }),
         h('span', { class: 'duel-action-desc', text: 'Velg fag, quiz og vanskelighetsgrad – så får du en kode.' }),
       ),
-      h('button', { class: 'duel-action-card', type: 'button', onclick: renderJoin },
+      h('button', { class: 'duel-action-card is-tiltable', type: 'button', onclick: renderJoin },
         h('span', { class: 'duel-action-icon', html: icon('arrow', 26) }),
         h('span', { class: 'duel-action-title', text: 'Bli med med kode' }),
         h('span', { class: 'duel-action-desc', text: 'Har du fått en kode? Skriv den inn og bli med motstanderen.' }),
@@ -116,7 +119,7 @@ export function renderDuel({ params }) {
   function renderSubjectPick() {
     M.phase = 'pick-subject';
     const grid = h('div', { class: 'setup-grid duel-subject-grid', style: 'grid-template-columns:repeat(3,minmax(0,1fr))' },
-      ...eligibleSubjects().map((s) => h('button', { class: 'setup-card', type: 'button', onclick: () => renderQuizPick(s) },
+      ...eligibleSubjects().map((s) => h('button', { class: 'setup-card is-tiltable', type: 'button', onclick: () => renderQuizPick(s) },
         h('span', { class: 'setup-icon', html: icon(s.icon, 26) }),
         h('span', { class: 'setup-label', text: s.name }),
         h('span', { class: 'setup-desc', text: s.tagline }),
@@ -129,7 +132,7 @@ export function renderDuel({ params }) {
     M.phase = 'pick-quiz';
     const qzs = ELIGIBLE_QUIZZES.filter((z) => z.subject === sub.slug);
     const grid = h('div', { class: 'setup-grid', style: 'grid-template-columns:repeat(2,minmax(0,1fr))' },
-      ...qzs.map((qz) => h('button', { class: 'setup-card', type: 'button', onclick: () => renderDifficultyPick(qz) },
+      ...qzs.map((qz) => h('button', { class: 'setup-card is-tiltable', type: 'button', onclick: () => renderDifficultyPick(qz) },
         h('span', { class: 'setup-icon', html: icon(qz.icon || 'bolt', 24) }),
         h('span', { class: 'setup-label', text: qz.title }),
         h('span', { class: 'setup-desc', text: qz.description }),
@@ -141,7 +144,7 @@ export function renderDuel({ params }) {
   function renderDifficultyPick(qz) {
     M.phase = 'pick-difficulty';
     const cards = h('div', { class: 'setup-grid', style: 'grid-template-columns:repeat(3,minmax(0,1fr))' },
-      ...DIFFS.map((d) => h('button', { class: 'setup-card diff-card diff-' + d.key, type: 'button', onclick: () => startHost(qz, d.key) },
+      ...DIFFS.map((d) => h('button', { class: 'setup-card is-tiltable diff-card diff-' + d.key, type: 'button', onclick: () => startHost(qz, d.key) },
         h('span', { class: 'setup-icon', html: icon(d.icon, 26) }),
         h('span', { class: 'setup-label', text: DIFF_LABELS[d.key] }),
         h('span', { class: 'setup-desc', text: d.desc }),
@@ -186,10 +189,21 @@ export function renderDuel({ params }) {
     M.role = 'host';
     setPhase('lobby-host');
     M.code = makeCode();
+    M.codeConfirmed = false;
     renderHostLobby('Kobler til duell-tjenesten …', false, false);
     resetMatchState();
 
-    const net = new DuelNet({ role: 'host', onData: hostOnData, onPeerClose: () => onPeerLeft() });
+    const net = new DuelNet({
+      role: 'host',
+      onData: hostOnData,
+      onPeerClose: () => onPeerLeft(),
+      onReady: (code) => {
+        // Serveren ga oss en ledig kode – vis den med en gang.
+        M.code = code;
+        M.codeConfirmed = true;
+        if (M.phase === 'lobby-host') renderHostLobby('Venter på at en klassekamerat blir med …', false, false);
+      },
+    });
     M.net = net;
     try {
       await net.connect(M.code);
@@ -202,14 +216,62 @@ export function renderDuel({ params }) {
     }
   }
 
+  function connBadge() {
+    const m = M.net && M.net.mode;
+    const label = m === 'relay' ? 'Server-tilkoblet' : m === 'p2p' ? 'Direkte (P2P)' : 'Kobler til …';
+    const cls = m === 'relay' ? 'is-relay' : m === 'p2p' ? 'is-p2p' : 'is-connecting';
+    return h('span', { class: 'duel-badge ' + cls, html: icon('laptop', 13) + '<span>' + label + '</span>' });
+  }
+
+  function copyBtn(text, label) {
+    const btn = h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: label });
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'Kopiert!';
+        setTimeout(() => { if (btn.isConnected) btn.textContent = label; }, 1600);
+      } catch {
+        btn.textContent = text;
+      }
+    });
+    return btn;
+  }
+
+  function shareBtn() {
+    const link = `${location.origin}${location.pathname}#/duell/${M.code}`;
+    const btn = h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Kopier lenke' });
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(link);
+        btn.textContent = 'Lenke kopiert!';
+        setTimeout(() => { if (btn.isConnected) btn.textContent = 'Kopier lenke'; }, 1600);
+      } catch {
+        btn.textContent = link;
+      }
+    });
+    return btn;
+  }
+
   function renderHostLobby(statusText, connected, failed) {
+    // Vis først koden når serveren har bekreftet den. Serveren kan i sjeldne
+    // tilfeller tildele en annen kode enn den vi foreslo (hvis den er opptatt
+    // av en gammel økt), og da må ikke en feil kode rekke å bli delt.
+    const confirmed = !!M.codeConfirmed;
+    const shownCode = confirmed ? M.code : '•••••';
     const codeRow = h('div', { class: 'duel-code-wrap' },
+      connBadge(),
       h('span', { class: 'duel-code-label', text: 'Duellkode' }),
-      h('div', { class: 'duel-code', 'aria-label': 'Duellkoden er ' + M.code }, M.code),
-      h('div', { class: 'duel-code-hint', text: 'Klassekameraten din skriver inn denne koden under «Bli med med kode».' }),
+      h('div', { class: 'duel-code' + (confirmed ? ' is-live' : ' is-waiting'), 'aria-label': confirmed ? 'Duellkoden er ' + M.code : 'Duellkoden hentes' }, shownCode),
+      confirmed ? h('div', { class: 'duel-code-actions' },
+        copyBtn(M.code, 'Kopier kode'),
+        shareBtn(),
+      ) : null,
+      h('div', { class: 'duel-code-hint', text: confirmed
+        ? 'Klassekameraten din skriver inn koden under «Bli med med kode» – eller åpner lenken du deler.'
+        : 'Henter en ledig kode fra duell-tjenesten …' }),
     );
 
-    const status = h('p', { class: failed ? 'duel-err' : 'duel-status', text: statusText });
+    const status = h('p', { class: (failed ? 'duel-err' : 'duel-status') + (!connected && !failed ? ' is-waiting' : ''), text: statusText });
 
     const startBtn = h('button', { class: 'btn btn-primary btn-lg', type: 'button', disabled: !connected || failed, text: 'Start duellen', onclick: hostStart });
 
@@ -293,8 +355,10 @@ export function renderDuel({ params }) {
   function renderJoinLobby(code) {
     setPhase('join-connecting');
     renderTo(h('div', { class: 'duel-lobby card' },
+      connBadge(),
+      h('div', { class: 'duel-scan' }, h('div', { class: 'result-icon', html: icon('users', 34) })),
       h('h2', { text: 'Kobler til duellen …' }),
-      h('p', { class: 'duel-status', text: `Kode ${code} · Venter på at motstanderen godtar koblingen.` }),
+      h('p', { class: 'duel-status is-waiting', text: `Kode ${code} · Finner motstanderen din …` }),
       h('button', { class: 'btn btn-ghost', type: 'button', text: 'Avbryt', onclick: () => { teardown(); renderJoin(); } }),
     ));
 
@@ -344,6 +408,7 @@ export function renderDuel({ params }) {
     } });
 
     renderTo(h('div', { class: 'duel-lobby card' },
+      connBadge(),
       h('div', { class: 'duel-lobby-head' },
         h('span', { class: 'setup-icon', html: icon(M.cfg.icon || 'bolt', 24) }),
         h('div', {},
@@ -389,19 +454,58 @@ export function renderDuel({ params }) {
     M.partnerAnswered = 0;
     M.partnerTimeMs = 0;
     M.partnerAgain = false;
+    M.locked = false;
   }
 
   function startMatch() {
     resetMatchState();
     M.matchStarted = true;
-    M.t0 = performance.now();
-    setPhase('match');
-    renderMatch();
+    setPhase('intro');
+    renderIntro();
+  }
+
+  // En kort "3-2-1-KAMP!"-nedtelling før selve duellen starter.
+  function renderIntro() {
+    const num = h('div', { class: 'duel-intro-num', text: '3' });
+    renderTo(h('div', { class: 'duel-intro' },
+      h('div', { class: 'duel-intro-ring' }),
+      h('div', { class: 'duel-intro-inner' },
+        h('span', { class: 'duel-intro-kicker', html: icon('bolt', 15) + ' Duellen starter' }),
+        num,
+        h('span', { class: 'duel-intro-players', text: 'Gjør deg klar!' }),
+      ),
+    ));
+    let n = 3;
+    num.classList.add('is-pop');
+    const tick = () => {
+      n--;
+      if (n > 0) {
+        num.textContent = String(n);
+        num.classList.remove('is-pop');
+        void num.offsetWidth;
+        num.classList.add('is-pop');
+        M.introTimer = setTimeout(tick, 500);
+      } else {
+        num.textContent = 'KAMP!';
+        num.classList.remove('is-pop');
+        void num.offsetWidth;
+        num.classList.add('is-pop');
+        M.introTimer = setTimeout(() => {
+          // Klokken starter først når nedtellingen er ferdig – fair for begge.
+          M.t0 = performance.now();
+          M.locked = false;
+          setPhase('match');
+          renderMatch();
+        }, 700);
+      }
+    };
+    M.introTimer = setTimeout(tick, 500);
   }
 
   function renderMatch() {
     const qd = M.questions[M.index];
     if (!qd) { endLocalMatch(); return; }
+    M.locked = false;
 
     const vs = h('div', { class: 'duel-vs' },
       duoPill('Du', M.score, M.answered, M.questions.length),
@@ -441,7 +545,7 @@ export function renderDuel({ params }) {
   function choiceBody(qd) {
     const list = h('ul', { class: 'opt-list' }, ...qd.options.map((o, i) =>
       h('li', {},
-        h('button', { class: 'opt', type: 'button', 'data-i': String(i), onclick: () => answerChoice(i) },
+        h('button', { class: 'opt', type: 'button', 'data-i': String(i), style: `--i:${i}`, onclick: () => answerChoice(i) },
           h('span', { class: 'opt-key', text: LETTERS[i] }),
           h('span', { text: o }),
         ),
@@ -472,6 +576,8 @@ export function renderDuel({ params }) {
   }
 
   function answerChoice(i) {
+    if (M.locked) return;
+    M.locked = true;
     const qd = M.questions[M.index];
     const btns = qa('.opt', stage);
     for (const b of btns) {
@@ -489,6 +595,8 @@ export function renderDuel({ params }) {
 
   function answerDrill() {
     const qd = M.questions[M.index];
+    if (M.locked) return;
+    M.locked = true;
     const inp = q('.drill-input', stage);
     const msg = q('.drill-msg', stage);
     if (!inp) return;
@@ -496,6 +604,8 @@ export function renderDuel({ params }) {
     const num = Number(val);
     const correct = Number.isFinite(num) && num === qd.ans;
     inp.disabled = true;
+    const svarBtn = q('.quiz-actions .btn-primary', stage);
+    if (svarBtn) svarBtn.disabled = true;
     msg.textContent = correct
       ? `Riktig! ${qd.a} × ${qd.b} = ${qd.ans}`
       : `Ikke helt riktig. ${qd.a} × ${qd.b} = ${qd.ans}`;
@@ -507,8 +617,10 @@ export function renderDuel({ params }) {
     M.answered = Math.min(M.answered + 1, M.questions.length);
     if (correct) M.score++;
     const actions = q('.quiz-actions', stage);
-    const last = M.index === M.questions.length - 1;
-    actions.appendChild(h('button', { class: 'btn btn-primary', type: 'button', html: (last ? 'Se resultat' : 'Neste') + icon('arrow', 15), onclick: () => next() }));
+    if (actions && !actions.querySelector('.next-btn')) {
+      const last = M.index === M.questions.length - 1;
+      actions.appendChild(h('button', { class: 'btn btn-primary next-btn', type: 'button', html: (last ? 'Se resultat' : 'Neste') + icon('arrow', 15), onclick: () => next() }));
+    }
     sendProgress();
   }
 
@@ -648,7 +760,7 @@ export function renderDuel({ params }) {
 
   function onPeerLeft() {
     const lobbyPhases = ['lobby-host', 'join-connecting', 'join-confirm', 'join-waiting-start', 'lobby-wait'];
-    const inMatch = M.phase === 'match' || M.phase === 'waiting';
+    const inMatch = M.phase === 'match' || M.phase === 'waiting' || M.phase === 'intro';
     if (!lobbyPhases.includes(M.phase) && !inMatch) return;
     renderTo(h('div', { class: 'duel-lobby card' },
       h('div', { class: 'result-icon', html: icon('close', 40) }),
