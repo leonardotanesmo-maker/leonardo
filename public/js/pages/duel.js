@@ -189,8 +189,10 @@ export function renderDuel({ params }) {
     M.role = 'host';
     setPhase('lobby-host');
     M.code = makeCode();
-    M.codeConfirmed = false;
-    renderHostLobby('Kobler til duell-tjenesten …', false, false);
+    // Koden lages lokalt – vis den MED EN GANG. Selve tilkoblingen skjer i
+    // bakgrunnen, og hvis serveren tildeler en annen kode, oppdaterer onReady.
+    M.codeConfirmed = true;
+    renderHostLobby('Venter på en klassekamerat – del koden din.', false, false);
     resetMatchState();
 
     const net = new DuelNet({

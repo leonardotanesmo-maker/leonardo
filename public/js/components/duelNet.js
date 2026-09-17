@@ -15,7 +15,7 @@
 const PEERJS_CDN = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
 const ID_PREFIX = 'leo-';
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const RELAY_OPEN_TIMEOUT = 6000; // hvor lenge vi prøver et lokalt/samme-adresse-relé
+const RELAY_OPEN_TIMEOUT = 3000; // hvor lenge vi prøver et lokalt/samme-adresse-relé
 const EXTERNAL_RELAY_OPEN_TIMEOUT = 30000; // eksternt relé kan trenge å "våkne" (gratis-host)
 
 // ICE-hjelpere for P2P-reserven. STUN finner den offentlige adressen, og en åpen
@@ -120,6 +120,8 @@ export class DuelNet {
   async connect(code, timeoutMs = 20000) {
     this.code = code;
     this.timeoutMs = timeoutMs;
+    // Koden er laget lokalt og vises med en gang – vi venter ikke på nettverket.
+    if (this.role === 'host' && this.onReady) this.onReady(this.code);
     // Prøv alle relé-kandidatene; en feil vi kan leve med er RelayUnavailable.
     for (const cand of relayCandidates()) {
       try {
@@ -258,23 +260,39 @@ export class DuelNet {
 
   startGuest(Peer) {
     return new Promise((resolve, reject) => {
-      const timeout = this.timeoutMs;
+      const deadline = Date.now() + this.timeoutMs;
       const peer = new Peer(PEER_OPTIONS);
       this.peer = peer;
-      peer.on('error', () => {});
-      peer.on('open', () => {
-        const conn = peer.connect(ID_PREFIX + this.code, { reliable: true });
+      let done = false;
+      // Verten kan fortsatt være i ferd med å registrere koden sin. Prøv derfor
+      // på nytt helt til tidsfristen – da virker det selv om gjesten er raskere.
+      const tryConnect = () => {
+        if (done) return;
+        if (Date.now() > deadline) {
+          done = true;
+          reject(new Error(`Fant ikke en duell med koden «${this.code}».`));
+          return;
+        }
+        let conn;
+        try { conn = peer.connect(ID_PREFIX + this.code, { reliable: true }); }
+        catch { setTimeout(tryConnect, 700); return; }
         this.conn = conn;
-        const timer = setTimeout(() => { cleanup(); reject(new Error(`Fant ikke en duell med koden «${this.code}».`)); }, timeout);
-        const cleanup = () => clearTimeout(timer);
+        const t = setTimeout(() => {
+          try { conn.close(); } catch { /* ignorer */ }
+          if (!done) setTimeout(tryConnect, 700);
+        }, 2500);
         conn.on('open', () => {
-          cleanup();
+          if (done) return;
+          clearTimeout(t);
+          done = true;
           conn.on('data', (d) => this.onData && this.onData(d));
           conn.on('close', () => this.onPeerClose && this.onPeerClose());
           resolve();
         });
-        conn.on('error', () => { cleanup(); reject(new Error('Kunne ikke koble til duellen.')); });
-      });
+        conn.on('error', () => { clearTimeout(t); if (!done) setTimeout(tryConnect, 700); });
+      };
+      peer.on('error', () => { if (!done) setTimeout(tryConnect, 700); });
+      peer.on('open', tryConnect);
     });
   }
 
