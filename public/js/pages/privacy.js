@@ -51,7 +51,7 @@ export function renderPrivacy() {
           h('h3', { text: 'Om "lokalt nett" og duell' }),
           h('p', { text: 'Dueller fungerer best når begge spillere er koblet til samme server (for eksempel samme skole-WiFi eller hjemmenett). Da bruker vi en innebygd WebSocket-tjeneste – hele duellen går gjennom den serveren dere allerede er koblet til, og vi trenger ingen eksterne tjenester. Det gjør at duellen virker også selv om skolenetverket stenger for direkte enhet-til-enhet-koblinger.' }),
           h('p', { style: 'margin-top:var(--sp-3)' }, 'Når siden ligger på en statisk host uten server (for eksempel GitHub Pages), kobler duellen seg i stedet til en liten Leonardo-relé-server (samme type innebygde tjeneste, hostet av oss). Da virker duellen både på samme nett og på tvers av nett, uansett hvilket nett spillerne er på.' ),
-          h('p', { style: 'margin-top:var(--sp-3)' }, 'Hvis ingen server er tilgjengelig i det hele tatt, prøver Leonardo å koble spillerne direkte (WebRTC) – dette virker av og til, særlig på to forskjellige nett.'),
+          h('p', { style: 'margin-top:var(--sp-3)' }, 'Hvis ingen server er tilgjengelig i det hele tatt, prøver Leonardo å koble spillerne direkte (WebRTC). Da kan offentlige hjelpe-tjenester (STUN) og en åpen TURN-formidler bli brukt for å finne hverandre; selve duellinnholdet er bare quiz-svar og poeng, ingenting personlig.'),
         ),
       ),
       h('div', {},

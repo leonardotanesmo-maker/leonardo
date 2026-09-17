@@ -18,6 +18,24 @@ const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const RELAY_OPEN_TIMEOUT = 6000; // hvor lenge vi prøver et lokalt/samme-adresse-relé
 const EXTERNAL_RELAY_OPEN_TIMEOUT = 30000; // eksternt relé kan trenge å "våkne" (gratis-host)
 
+// ICE-hjelpere for P2P-reserven. STUN finner den offentlige adressen, og en åpen
+// TURN-relé gjør at direkte enhet-til-enhet også virker når nettverket stenger
+// for det (symmetrisk NAT, mange skole-/mobilnett). Bare reserveveien bruker
+// dette – når reléet virker, går duellen gjennom det i stedet.
+const ICE_SERVERS = [
+  { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+  {
+    urls: [
+      'turn:openrelay.metered.ca:80',
+      'turn:openrelay.metered.ca:443',
+      'turn:openrelay.metered.ca:443?transport=tcp',
+    ],
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+];
+const PEER_OPTIONS = { debug: 0, config: { iceServers: ICE_SERVERS } };
+
 let peerjsPromise = null;
 
 export function makeCode(len = 5) {
@@ -206,7 +224,7 @@ export class DuelNet {
       const timeout = this.timeoutMs;
       const attempt = () => {
         const id = ID_PREFIX + this.code;
-        const peer = new Peer(id, { debug: 0 });
+        const peer = new Peer(id, PEER_OPTIONS);
         this.peer = peer;
         const timer = setTimeout(() => { cleanup(); reject(new Error('Tidsavbrudd – ventet for lenge på motstander.')); }, timeout);
         const cleanup = () => clearTimeout(timer);
@@ -237,7 +255,7 @@ export class DuelNet {
   startGuest(Peer) {
     return new Promise((resolve, reject) => {
       const timeout = this.timeoutMs;
-      const peer = new Peer({ debug: 0 });
+      const peer = new Peer(PEER_OPTIONS);
       this.peer = peer;
       peer.on('error', () => {});
       peer.on('open', () => {
