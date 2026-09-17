@@ -221,32 +221,36 @@ export class DuelNet {
   // -------- P2P (PeerJS) – reserve --------
   startHost(Peer) {
     return new Promise((resolve, reject) => {
-      const timeout = this.timeoutMs;
       const attempt = () => {
         const id = ID_PREFIX + this.code;
         const peer = new Peer(id, PEER_OPTIONS);
         this.peer = peer;
-        const timer = setTimeout(() => { cleanup(); reject(new Error('Tidsavbrudd – ventet for lenge på motstander.')); }, timeout);
-        const cleanup = () => clearTimeout(timer);
 
+        // Koden er reservert hos PeerJS – vis den MED EN GANG. Uten dette ville
+        // verten skjult koden til en gjest koblet til, men gjesten trenger
+        // koden for å kunne koble til (låst sirkel).
+        peer.on('open', () => {
+          if (this.onReady) this.onReady(this.code);
+        });
         peer.on('error', (err) => {
-          if (err && err.type === 'unavailable-id') { cleanup(); this.code = makeCode(); attempt(); return; }
+          if (err && err.type === 'unavailable-id') {
+            try { peer.destroy(); } catch { /* ignorer */ }
+            this.code = makeCode();
+            attempt();
+            return;
+          }
           if (err && err.type === 'peer-unavailable') return;
-          cleanup();
           reject(new Error('Duell-tjenesten svarer ikke. Prøv igjen om litt.'));
         });
         peer.on('connection', (conn) => {
-          cleanup();
           this.conn = conn;
           conn.on('open', () => {
             conn.on('data', (d) => this.onData && this.onData(d));
             conn.on('close', () => this.onPeerClose && this.onPeerClose());
-            if (this.onReady) this.onReady(this.code);
             resolve();
           });
-          conn.on('error', () => { cleanup(); reject(new Error('Kunne ikke koble til motstanderen.')); });
+          conn.on('error', () => reject(new Error('Kunne ikke koble til motstanderen.')));
         });
-        this.cleanupHostTimer = cleanup;
       };
       attempt();
     });
